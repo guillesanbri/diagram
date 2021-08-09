@@ -1,11 +1,10 @@
 from SyntheticDiagram import SyntheticDiagram
 import numpy as np
+import utils
 import cv2
-import glob
 
 
 # TODO: Documentation of this class
-# TODO: Documentation of the utils functions
 # TODO: Tests of this class
 # TODO: Generate report of the configuration of each generated dataset
 # TODO: Add loading of shapes, text, and connections correctly.
@@ -36,14 +35,11 @@ class DiagramGenerator:
         """
         # Paths
         self.output_path = output_path
-        # Elements paths
-        self.texts = None
-        self.connections = None
         # Diagram parametrization
         # TODO: Add warning if min dimensions are not between a percentage of output shape
         self.quantity = quantity
         self.output_shape = output_shape  # (h, w)
-        self.min_shape = min_shape
+        self.min_shape = min_shape  # (h, w)
         self.max_placement_iter = max_placement_iter
         self.debug = debug
         self.rng = np.random.default_rng(seed)
@@ -79,8 +75,7 @@ class DiagramGenerator:
 
 
 if __name__ == "__main__":
-    # TODO: Move this function to a utils file where it loads the paths after reading the id files.
-    shapes_paths = glob.glob("elements/" + f'?????-???-???-???-???-???.png')
+    shapes_paths = utils.get_shapes_paths("elements/")
     dg = DiagramGenerator("diagrams/", 10, seed=42, debug=True)
     # TODO: Include annotations saving into run method?
     annotations = dg.run(shapes_paths, None, None)
