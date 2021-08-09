@@ -126,6 +126,6 @@ class ElementExtractor:
 
 
 if __name__ == "__main__":
-    ee = ElementExtractor("easy1-aaa-bbb-ccc-ddd.jpeg")
+    ee = ElementExtractor("pictures/easy1-aaa-bbb-ccc-ddd.jpeg")
     ee.extract(debug_clustering=True, debug_segmentation=True)
     ee.save_elements("elements/")
