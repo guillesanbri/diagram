@@ -1,0 +1,5 @@
+000 text-text
+400 shape-rectangular-parallelogram
+600 shape-ellipsis
+800 shape-triangle
+a00 connection-solid-straight-line 
