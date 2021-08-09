@@ -11,17 +11,34 @@ import glob
 # TODO: Add loading of shapes, text, and connections correctly.
 # TODO: Pad to square in the preprocessing function to new inputs.
 class DiagramGenerator:
-    def __init__(self, elements_path, output_path, quantity,
+    """
+    Object to create a set of synthetic parametrized diagrams.
+    These diagrams are annotated with bounding boxes based on
+    the placed elements.
+    """
+    def __init__(self, output_path, quantity,
                  output_shape=(1024, 1024), min_shape=(340, 340),
                  max_placement_iter=5, seed=None, debug=False):
+        """
+        Initializes a instance of a DiagramGenerator.
+
+        :param output_path: Path of the directory where the generated diagrams
+         will be saved.
+        :param quantity: Number of diagrams to generate.
+        :param output_shape: Shape (h, w) of the generated images.
+        :param min_shape: Minimum shape (h, w) of the actual diagram
+         inside the output image.
+        :param max_placement_iter: Maximum number of attempts to place a
+         shape in a diagram without overlapping.
+        :param seed: Seed for the random number generator.
+        :param debug: Mode of execution, setting this parameter to True
+         will make the seeds of each diagram non random.
+        """
         # Paths
         self.output_path = output_path
         # Elements paths
         self.texts = None
         self.connections = None
-        self.elements_path = elements_path
-        # TODO: Move this function to a utils file where it loads the paths after reading the id files.
-        self.shape_paths = glob.glob(self.elements_path + f'?????-???-???-???-???-???.png')
         # Diagram parametrization
         # TODO: Add warning if min dimensions are not between a percentage of output shape
         self.quantity = quantity
@@ -31,7 +48,20 @@ class DiagramGenerator:
         self.debug = debug
         self.rng = np.random.default_rng(seed)
 
-    def run(self, shapes_paths, connection_paths, text_paths):
+    def run(self, shapes_paths, connections_paths, texts_paths):
+        """
+        Initiates the generation of the diagrams. This method parameters allow
+        to configure the set of shapes, connections and texts passed to the
+        SyntheticDiagram object.
+
+        :param shapes_paths: Array of the paths to each valid shape image to use
+         during diagram generation.
+        :param connections_paths: Array of the paths to each valid connection
+         image to use during diagram generation.
+        :param texts_paths: Array of the paths to each valid text image to use
+         during diagram generation.
+        :return: annotations?
+        """
         annotations = None
         for i in range(self.quantity):
             seed = None
@@ -49,7 +79,9 @@ class DiagramGenerator:
 
 
 if __name__ == "__main__":
-    dg = DiagramGenerator("elements/", "diagrams/", 10, seed=42, debug=True)
+    # TODO: Move this function to a utils file where it loads the paths after reading the id files.
+    shapes_paths = glob.glob("elements/" + f'?????-???-???-???-???-???.png')
+    dg = DiagramGenerator("diagrams/", 10, seed=42, debug=True)
     # TODO: Include annotations saving into run method?
-    annotations = dg.run(dg.shape_paths, None, None)
+    annotations = dg.run(shapes_paths, None, None)
     # dg.save_annotation_as(annotations, "VOC")  # Convert to typical bbox annotation formats.
