@@ -1,0 +1,13 @@
+{
+	"texts": {
+		"es-es" : "000"
+	},
+	"shapes": {
+		"rectangular-parallelogram" : "400",
+		"ellipse" : "600",
+		"triangle" : "800"
+	},
+	"connections": {
+		"solid-straight-line" : "a00"
+	}
+}
