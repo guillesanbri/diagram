@@ -39,7 +39,8 @@ def get_shapes_paths(elements_path,
     :param exclude_suffixes: A list of suffixes to be excluded from the list.
      If both include and exclude suffixes are empty, all shapes are included
      in the returned list.
-    :return: List with a path for each valid shape image.
+    :return: Tuple containing: (Dictionary of id as keys and the suffix as
+     value, List with a path for each valid shape image).
     :raises ValueError: If both include_suffixes and exclude_suffixes are
      populated.
     """
@@ -49,15 +50,18 @@ def get_shapes_paths(elements_path,
         raise ValueError("Only one of the two prefixes lists can be defined"
                          "at the same time.")
     elif include_suffixes:
+        suffixes = include_suffixes
         ids = [suffix_dict[key] for key in include_suffixes]
     elif exclude_suffixes:
         all_ids = suffix_dict.values()
         exclude_ids = [suffix_dict[key] for key in exclude_suffixes]
+        suffixes = set(suffix_dict.keys()) - set(exclude_suffixes)
         ids = set(all_ids) - set(exclude_ids)
     else:  # empty_include and empty_exclude
+        suffixes = suffix_dict.keys()
         ids = suffix_dict.values()
     paths = get_paths(elements_path, ids)
-    return paths
+    return dict(zip(ids, suffixes)), paths
 
 
 def scale_image(image, max_size_length):

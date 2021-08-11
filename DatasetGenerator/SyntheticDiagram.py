@@ -5,6 +5,8 @@ import cv2
 
 
 # TODO: Randomize rotation of shapes before placing them (Care with annotations!).
+# TODO: Add text and connections to annotations.
+# TODO: Document and test this class.
 class SyntheticDiagram:
     def __init__(self, shapes_paths, connections_paths, texts_paths,
                  output_shape, min_shape, n_shapes, max_placement_iter=5,
@@ -14,8 +16,6 @@ class SyntheticDiagram:
         # Output image and annotation
         self.output_shape = output_shape
         self.output_img = np.zeros(self.output_shape, dtype=np.uint8)
-        # TODO: Make annotations
-        self.annotation = None
         # Randomized diagram parametrization (rparam)
         self.rheight = self.rng.integers(min_shape[0], self.output_shape[0])
         self.rwidth = self.rng.integers(min_shape[1], self.output_shape[1])
@@ -28,7 +28,7 @@ class SyntheticDiagram:
         # Shapes
         self.n_shapes = n_shapes
         self.max_placement_iter = max_placement_iter
-        # [{"ulx", "uly", "lrx", "lry"}, {"ulx", "uly", "lrx", "lry"}, ...]
+        # [{"ulx", "uly", "lrx", "lry", "id"}, ...]
         self.placed_shapes = []
         self.shape_size_rng_range = shape_size_rng_range
         # Mode
@@ -52,7 +52,7 @@ class SyntheticDiagram:
         b2_right_b1 = b2["ulx"] > b1["lrx"]
         return not (b1_over_b2 or b2_over_b1 or b1_right_b2 or b2_right_b1)
 
-    def __place_element_into_output_img(self, shape_img):
+    def __place_element_into_output_img(self, shape_img, element_id):
         # Try to fit the shape n times, break loop if placed.
         for i in range(self.max_placement_iter):
             # Randomize placement of the shape.
@@ -60,7 +60,8 @@ class SyntheticDiagram:
             new_shape_position = {"ulx": xs0,
                                   "uly": ys0,
                                   "lrx": xs0 + shape_img.shape[1],
-                                  "lry": ys0 + shape_img.shape[0]}
+                                  "lry": ys0 + shape_img.shape[0],
+                                  "id": element_id}
             # Check for overlapping.
             overlapping = False
             for shape_position in self.placed_shapes:
@@ -68,8 +69,10 @@ class SyntheticDiagram:
                     overlapping = True
                     break
             if not overlapping:
+                # Place the shape
                 self.output_img[ys0:ys0 + shape_img.shape[0],
                                 xs0:xs0 + shape_img.shape[1]] |= shape_img
+                # Store the placed shape
                 self.placed_shapes.append(new_shape_position)
                 break
 
@@ -77,6 +80,17 @@ class SyntheticDiagram:
         cv2.rectangle(self.output_img, (self.x0, self.y0),
                       (self.x0 + self.rwidth, self.y0 + self.rheight),
                       color=255, thickness=3)
+
+    def __get_annotation(self):
+        annotation = ""
+        for shape in self.placed_shapes:
+            x_min = shape["ulx"]
+            y_min = shape["uly"]
+            x_max = shape["lrx"]
+            y_max = shape["lry"]
+            element_id = shape["id"]
+            annotation += f"{x_min},{y_min},{x_max},{y_max},{element_id} "
+        return annotation[:-1]
 
     def generate(self):
         if self.debug:
@@ -89,14 +103,16 @@ class SyntheticDiagram:
 
         for shape_index in range(self.n_shapes):
             # Choose a random shape and read it.
+            # TODO: Catch error if shapes_paths is empty.
             shape_path = self.rng.choice(self.shapes_paths)
             shape_img = cv2.imread(shape_path, cv2.IMREAD_GRAYSCALE)
+            element_id = shape_path.split("/")[-1].split(".")[0].split("-")[3]
             # Randomize its maximum shape and scale it.
             randomized_size = self.__randomize_shape_size(max_shape_size)
             shape_img = utils.scale_image(shape_img, randomized_size)
             # Try to place the shape
-            self.__place_element_into_output_img(shape_img)
-        return self.annotation, self.output_img
+            self.__place_element_into_output_img(shape_img, element_id)
+        return self.__get_annotation(), self.output_img
 
     def get_name(self):
         return f'synth{hashlib.md5(self.output_img.tobytes()).hexdigest()}.png'
