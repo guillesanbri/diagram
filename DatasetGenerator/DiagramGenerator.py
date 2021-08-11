@@ -5,10 +5,10 @@ import warnings
 import utils
 import json
 import cv2
-import os
 
 
 # TODO: Tests of this class
+# TODO: Randomize number of shapes in each diagram
 # TODO: Generate report of the configuration of each generated dataset
 # TODO: Add loading of shapes, text, and connections correctly.
 # TODO: Pad to square in the preprocessing function to new inputs.
@@ -96,18 +96,7 @@ class DiagramGenerator:
         """
         if self.annotations is None:
             warnings.warn("No annotations have been previously generated!")
-        if os.path.isfile(self.annotation_file):
-            k = input(f"{self.annotation_file} already exists, do you want"
-                      + " to overwrite it? (y/n): ")
-            filename = self.annotation_file.split(".")[-2]
-            extension = self.annotation_file.split(".")[-1]
-            suffix = ""
-            while k.lower() != 'y' and suffix == "":
-                suffix = input("Write a new suffix to add to the file: ")
-                self.annotation_file = f'{filename}-{suffix}.{extension}'
-                if os.path.isfile(self.annotation_file):
-                    print("Suffix is already in use.")
-                    suffix = ""
+        self.annotation_file = utils.check_file_path(self.annotation_file)
         with open(self.annotation_file, 'w') as f:
             f.write('\n'.join(self.annotations))
 
@@ -155,6 +144,7 @@ class DiagramGenerator:
 
 
 if __name__ == "__main__":
+    # Read shapes, connections and texts
     shapes_dict, shapes_paths = utils.get_shapes_paths("elements/")
     # Read connections
     # Read texts
@@ -167,6 +157,7 @@ if __name__ == "__main__":
 
     dg = DiagramGenerator("diagrams/", 10, seed=42, debug=True)
     annotation_classes = dg.run(shapes_paths, None, None, ids_suffixes)
-    with open('annotated_classes.json', 'w') as f:
+    classes_json_path = utils.check_file_path('annotated_classes.json')
+    with open(classes_json_path, 'w') as f:
         json.dump(annotation_classes, f)
     # dg.save_annotation_as(annotations, "VOC")  # Convert to typical bbox annotation formats.

@@ -1,6 +1,7 @@
 import cv2
 import glob
 import json
+import os
 import numpy as np
 
 
@@ -86,6 +87,30 @@ def scale_image(image, max_size_length):
     else:
         new_height, new_width = int(max_size_length / width * height), max_size_length
     return cv2.resize(image, dsize=(new_width, new_height), interpolation=cv2.INTER_NEAREST_EXACT)
+
+
+def check_file_path(file):
+    """
+    Checks if a file exists. If it does not exist, the same file path is
+    returned. If it does exist, the user is asked to confirm overwriting
+    or to add a suffix to the file name.
+    :param file: Original path+filename to be checked.
+    :return: Checked or modified filename.
+    """
+    new_file = file
+    if os.path.isfile(file):
+        k = input(f"{file} already exists, do you want"
+                  + " to overwrite it? (y/n): ")
+        filename = file.split(".")[-2]
+        extension = file.split(".")[-1]
+        suffix = ""
+        while k.lower() != 'y' and suffix == "":
+            suffix = input("Write a new suffix to add to the file: ")
+            new_file = f'{filename}-{suffix}.{extension}'
+            if os.path.isfile(new_file):
+                print("Suffix is already in use.")
+                suffix = ""
+    return new_file
 
 
 if __name__ == "__main__":
