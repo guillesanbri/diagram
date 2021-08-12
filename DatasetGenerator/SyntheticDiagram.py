@@ -6,11 +6,39 @@ import cv2
 
 # TODO: Randomize rotation of shapes before placing them (Care with annotations!).
 # TODO: Add text and connections to annotations.
-# TODO: Document and test this class.
+# TODO: Test this class.
 class SyntheticDiagram:
+    """
+    Object representing one single synthetic diagram and its parameters.
+    This class is intended to be used from a DiagramGenerator instance.
+    """
     def __init__(self, shapes_paths, connections_paths, texts_paths,
                  output_shape, min_shape, n_shapes, max_placement_iter=5,
                  shape_size_rng_range=1.5, seed=None, debug=False):
+        """
+        Initializes an instance of a SyntheticDiagram
+
+        :param shapes_paths: List of paths pointing to every shape available
+         to build an artificial diagram.
+        :param connections_paths: List of paths pointing to every connection
+         available to build an artificial diagram.
+        :param texts_paths: List of paths pointing to every text available
+         to build an artificial diagram.
+        :param output_shape: Shape (h, w) of the output image (diagram).
+        :param min_shape: Minimum shape (h, w) of the actual diagram to be
+         constructed inside the output image.
+        :param n_shapes: Number of shapes to be randomly chosen and placed
+         into the generated diagram.
+        :param max_placement_iter: Maximum number of iterations to try to
+         place each shape without overlapping with any previously placed shape.
+        :param shape_size_rng_range: Factor which defines the upper limit of
+         the size randomization that takes place in the __randomize_shape_size
+         method.
+        :param seed: Seed to the random number generator used to generate the
+         diagram.
+        :param debug: Mode of execution, setting this parameter to True
+         will draw the actual diagram area inside the output image.
+        """
         # Random number generator
         self.rng = np.random.default_rng(seed)
         # Output image and annotation
@@ -35,24 +63,60 @@ class SyntheticDiagram:
         self.debug = debug
 
     def __randomize_shape_size(self, size):
+        """
+        Modifies a given size to be randomized between said value and an upper
+        limit given by the given size multiplied by self.shape_size_rng_range.
+
+        :param size: Initial size to be modified.
+        :return: New size randomized in the range
+         [size, self.shape_size_rng_range * size)
+        """
         lower_limit = size  # This could be modified
         upper_limit = int((1 + self.shape_size_rng_range) * size)
         return self.rng.integers(lower_limit, upper_limit)
 
     def __randomize_shape_location(self, shape_shape):
+        """
+        Generates a randomized point (x,y) taking into account the actual
+        diagram area and the size of the element (shape) being placed. The
+        generated coordinates ensure that the placed shape will be within
+        the randomized limits of the diagram.
+
+        :param shape_shape: Shape (h, w) of the shape being placed into
+         the diagram.
+        :return: Tuple (xs, ys) containing the randomized coordinates.
+        """
         xs0 = self.rng.integers(self.x0, self.x0 + self.rwidth - shape_shape[1])
         ys0 = self.rng.integers(self.y0, self.y0 + self.rheight - shape_shape[0])
         return xs0, ys0
 
     @staticmethod
     def overlaps(b1, b2):
+        """
+        Checks if two boxes given by their upper left and lower right corners
+        are overlapping.
+
+        :param b1: Box denoted by a dictionary with at least the keys ulx, uly
+         (upper left) and lrx, lry (lower right).
+        :param b2: Box denoted by a dictionary with at least the keys ulx, uly
+         (upper left) and lrx, lry (lower right).
+        :return: True if the two boxes overlap, False if not.
+        """
         b1_over_b2 = b1["lry"] < b2["uly"]
         b2_over_b1 = b2["lry"] < b1["uly"]
         b1_right_b2 = b1["ulx"] > b2["lrx"]
         b2_right_b1 = b2["ulx"] > b1["lrx"]
         return not (b1_over_b2 or b2_over_b1 or b1_right_b2 or b2_right_b1)
 
-    def __place_element_into_output_img(self, shape_img, element_id):
+    def __place_shape_into_output_img(self, shape_img, element_id):
+        """
+        Tries to place a given shape image into the output image taking into
+        account the already placed shapes.
+
+        :param shape_img: OpenCV image (np.array) containing the shape that
+         is going to be placed.
+        :param element_id: Id of the shape contained in shape_img.
+        """
         # Try to fit the shape n times, break loop if placed.
         for i in range(self.max_placement_iter):
             # Randomize placement of the shape.
@@ -77,11 +141,21 @@ class SyntheticDiagram:
                 break
 
     def __draw_randomized_limits(self):
+        """
+        Draws a rectangle in the output image signaling the area occupied
+        by the real diagram (randomized at initialization).
+        """
         cv2.rectangle(self.output_img, (self.x0, self.y0),
                       (self.x0 + self.rwidth, self.y0 + self.rheight),
                       color=255, thickness=3)
 
     def __get_annotation(self):
+        """
+        Gets a string where the boxes placed into a diagram are annotated.
+        These boxes follow the schema: x_min,y_min,x_max,y_max,id box2 ...
+
+        :return: Annotation with as many boxes as objects have been placed.
+        """
         annotation = ""
         for shape in self.placed_shapes:
             x_min = shape["ulx"]
@@ -93,6 +167,16 @@ class SyntheticDiagram:
         return annotation[:-1]
 
     def generate(self):
+        """
+        Generates the output image containing an artificial diagram composed
+        by a set of the available elements.
+
+        :return: A tuple containing (Annotation for the generated image in
+         format box1 box2 box3..., Output image with the generated diagram).
+         Box annotation follow the schema min_x,min_y,max_x,max_y,element_id
+         where the element_id represents the id in the element_id.json, not
+         the final class id.
+        """
         if self.debug:
             self.__draw_randomized_limits()
 
@@ -101,6 +185,7 @@ class SyntheticDiagram:
         min_side = np.min([self.rwidth, self.rheight])
         max_shape_size = int(min_side / self.n_shapes * 2)
 
+        # TODO: Move this procedure to a place_shapes method.
         for shape_index in range(self.n_shapes):
             # Choose a random shape and read it.
             # TODO: Catch error if shapes_paths is empty.
@@ -111,8 +196,13 @@ class SyntheticDiagram:
             randomized_size = self.__randomize_shape_size(max_shape_size)
             shape_img = utils.scale_image(shape_img, randomized_size)
             # Try to place the shape
-            self.__place_element_into_output_img(shape_img, element_id)
+            self.__place_shape_into_output_img(shape_img, element_id)
         return self.__get_annotation(), self.output_img
 
     def get_name(self):
-        return f'synth{hashlib.md5(self.output_img.tobytes()).hexdigest()}.png'
+        """
+        Generates a unique and deterministic filename for a generated diagram.
+        :return: Filename with schema 'synth{md5}.png'
+        """
+        diagram_md5 = hashlib.md5(self.output_img.tobytes()).hexdigest()
+        return f'synth{diagram_md5}.png'

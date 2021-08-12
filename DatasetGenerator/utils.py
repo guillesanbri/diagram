@@ -71,6 +71,7 @@ def scale_image(image, max_size_length):
     This maximum size will dictate the size of the largest size of the image,
     while its shorter side will be scaled accordingly to preserve the aspect
     ratio.
+
     :param image: Image to be scaled.
     :param max_size_length: Size in pixels of the largest side of the resulting
      image.
@@ -94,6 +95,7 @@ def check_file_path(file):
     Checks if a file exists. If it does not exist, the same file path is
     returned. If it does exist, the user is asked to confirm overwriting
     or to add a suffix to the file name.
+
     :param file: Original path+filename to be checked.
     :return: Checked or modified filename.
     """

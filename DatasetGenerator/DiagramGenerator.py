@@ -23,7 +23,7 @@ class DiagramGenerator:
                  output_shape=(1024, 1024), min_shape=(340, 340),
                  max_placement_iter=5, seed=None, debug=False):
         """
-        Initializes a instance of a DiagramGenerator.
+        Initializes an instance of a DiagramGenerator.
 
         :param output_path: Path of the directory where the generated diagrams
          will be saved.
@@ -61,6 +61,7 @@ class DiagramGenerator:
         Updates the self.annotations array to substitute each box id by
         a class id starting from 0. New boxes annotations will follow the next
         schema: min_x,min_y,max_x,max_y,class
+
         :param ids_suffixes: Dictionary of id as keys and the suffix as value.
         :return: A dictionary mapping each new id class to its corresponding
          element suffix. ie: new_class_id:element_suffix
