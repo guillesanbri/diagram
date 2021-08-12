@@ -115,6 +115,25 @@ def check_file_path(file):
     return new_file
 
 
+# TODO: Change Tests from TestSyntheticDiagram to TestUtils
+def overlaps(b1, b2):
+    """
+    Checks if two boxes given by their upper left and lower right corners
+    are overlapping.
+
+    :param b1: Box denoted by a dictionary with at least the keys ulx, uly
+     (upper left) and lrx, lry (lower right).
+    :param b2: Box denoted by a dictionary with at least the keys ulx, uly
+     (upper left) and lrx, lry (lower right).
+    :return: True if the two boxes overlap, False if not.
+    """
+    b1_over_b2 = b1["lry"] < b2["uly"]
+    b2_over_b1 = b2["lry"] < b1["uly"]
+    b1_right_b2 = b1["ulx"] > b2["lrx"]
+    b2_right_b1 = b2["ulx"] > b1["lrx"]
+    return not (b1_over_b2 or b2_over_b1 or b1_right_b2 or b2_right_b1)
+
+
 if __name__ == "__main__":
     print(get_shapes_paths("elements/"))
     print(get_shapes_paths("elements/", include_suffixes=["ellipse"]))

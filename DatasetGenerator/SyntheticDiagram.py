@@ -56,13 +56,31 @@ class SyntheticDiagram:
         # Shapes
         self.n_shapes = n_shapes
         self.max_placement_iter = max_placement_iter
-        # [{"ulx", "uly", "lrx", "lry", "id"}, ...]
-        self.placed_shapes = []
+        self.placed_shapes = []  # [{"ulx", "uly", "lrx", "lry", "id"}, ...]
+        self.max_shape_size = self.calculate_max_shape_size()
         self.shape_size_rng_range = shape_size_rng_range
         # Mode
         self.debug = debug
 
-    def __randomize_shape_size(self, size):
+    def calculate_max_shape_size(self):
+        """
+        Calculates the maximum size of a shape as a function of
+        the minimum size of the diagram. This function may be modified.
+
+        :return: Maximum size of the shapes.
+        """
+        min_side = np.min([self.rwidth, self.rheight])
+        return int(min_side / self.n_shapes * 2)
+
+    def get_name(self):
+        """
+        Generates a unique and deterministic filename for a generated diagram.
+        :return: Filename with schema 'synth{md5}.png'
+        """
+        diagram_md5 = hashlib.md5(self.output_img.tobytes()).hexdigest()
+        return f'synth{diagram_md5}.png'
+
+    def randomize_shape_size(self, size):
         """
         Modifies a given size to be randomized between said value and an upper
         limit given by the given size multiplied by self.shape_size_rng_range.
@@ -75,7 +93,12 @@ class SyntheticDiagram:
         upper_limit = int((1 + self.shape_size_rng_range) * size)
         return self.rng.integers(lower_limit, upper_limit)
 
-    def __randomize_shape_location(self, shape_shape):
+    # TODO: Write this method.
+    # TODO: Test behaviour of the model with and without rotations.
+    def randomize_shape_rotation(self):
+        pass
+
+    def randomize_shape_location(self, shape_shape):
         """
         Generates a randomized point (x,y) taking into account the actual
         diagram area and the size of the element (shape) being placed. The
@@ -90,28 +113,37 @@ class SyntheticDiagram:
         ys0 = self.rng.integers(self.y0, self.y0 + self.rheight - shape_shape[0])
         return xs0, ys0
 
-    @staticmethod
-    def overlaps(b1, b2):
+    def place_element(self, x, y, image, box_dict):
         """
-        Checks if two boxes given by their upper left and lower right corners
-        are overlapping.
+        Places the element defined by an image and a box_dict into the output
+        image and appends its position to self.placed_shapes.
 
-        :param b1: Box denoted by a dictionary with at least the keys ulx, uly
-         (upper left) and lrx, lry (lower right).
-        :param b2: Box denoted by a dictionary with at least the keys ulx, uly
-         (upper left) and lrx, lry (lower right).
-        :return: True if the two boxes overlap, False if not.
+        :param x: Coordinate of the point of the output image where the upper
+         left corner of the element will be placed.
+        :param y: Coordinate of the point of the output image where the upper
+         left corner of the element will be placed.
+        :param image: OpenCV image (np.array) containing the element that
+         is going to be placed.
+        :param box_dict: Box denoted by a dictionary with at least the keys
+         ulx, uly (upper left); lrx, lry (lower right) and id (element_id).
         """
-        b1_over_b2 = b1["lry"] < b2["uly"]
-        b2_over_b1 = b2["lry"] < b1["uly"]
-        b1_right_b2 = b1["ulx"] > b2["lrx"]
-        b2_right_b1 = b2["ulx"] > b1["lrx"]
-        return not (b1_over_b2 or b2_over_b1 or b1_right_b2 or b2_right_b1)
+        try:
+            required_keys = ["ulx", "uly", "lrx", "lry", "id"]
+            for key in required_keys:
+                _ = box_dict[key]
+        except KeyError:
+            raise KeyError("box_dict does not have the required keys "
+                           "to be stored")
+        # Place the shape
+        self.output_img[y:y + image.shape[0], x:x + image.shape[1]] |= image
+        # Store the placed element
+        self.placed_shapes.append(box_dict)
 
-    def __place_shape_into_output_img(self, shape_img, element_id):
+    def try_to_place_shape(self, shape_img, element_id):
         """
         Tries to place a given shape image into the output image taking into
-        account the already placed shapes.
+        account the already placed shapes. If successful, it places the shape
+        calling the place_element() method.
 
         :param shape_img: OpenCV image (np.array) containing the shape that
          is going to be placed.
@@ -120,7 +152,7 @@ class SyntheticDiagram:
         # Try to fit the shape n times, break loop if placed.
         for i in range(self.max_placement_iter):
             # Randomize placement of the shape.
-            xs0, ys0 = self.__randomize_shape_location(shape_img.shape)
+            xs0, ys0 = self.randomize_shape_location(shape_img.shape)
             new_shape_position = {"ulx": xs0,
                                   "uly": ys0,
                                   "lrx": xs0 + shape_img.shape[1],
@@ -129,15 +161,11 @@ class SyntheticDiagram:
             # Check for overlapping.
             overlapping = False
             for shape_position in self.placed_shapes:
-                if self.overlaps(shape_position, new_shape_position):
+                if utils.overlaps(shape_position, new_shape_position):
                     overlapping = True
                     break
             if not overlapping:
-                # Place the shape
-                self.output_img[ys0:ys0 + shape_img.shape[0],
-                                xs0:xs0 + shape_img.shape[1]] |= shape_img
-                # Store the placed shape
-                self.placed_shapes.append(new_shape_position)
+                self.place_element(xs0, ys0, shape_img, new_shape_position)
                 break
 
     def __draw_randomized_limits(self):
@@ -149,10 +177,11 @@ class SyntheticDiagram:
                       (self.x0 + self.rwidth, self.y0 + self.rheight),
                       color=255, thickness=3)
 
-    def __get_annotation(self):
+    def get_annotation(self):
         """
         Gets a string where the boxes placed into a diagram are annotated.
-        These boxes follow the schema: x_min,y_min,x_max,y_max,id box2 ...
+        These boxes follow the schema:
+        x_min,y_min,x_max,y_max,element_id box2 ...
 
         :return: Annotation with as many boxes as objects have been placed.
         """
@@ -166,6 +195,41 @@ class SyntheticDiagram:
             annotation += f"{x_min},{y_min},{x_max},{y_max},{element_id} "
         return annotation[:-1]
 
+    def load_random_from(self, paths):
+        """
+        Chooses a random path from a list of image paths and reads the
+        corresponding image. Path must be in the format
+        ?????-???-???-{_id}-???-???.png as the element id is retrieved
+        from the path.
+
+        :param paths: List of paths of images.
+        :return: Tuple (element id, OpenCV image) from the chosen image. Id is the
+         corresponding element id extracted from the filename.
+        :raises ValueError: If the path argument is empty.
+        """
+        if paths is None:
+            raise ValueError("paths argument can not be an empty list.")
+        chosen_path = self.rng.choice(paths)
+        chosen_img = cv2.imread(chosen_path, cv2.IMREAD_GRAYSCALE)
+        element_id = chosen_path.split("/")[-1].split(".")[0].split("-")[3]
+        return element_id, chosen_img
+
+    def add_shapes(self):
+        """
+        Parametrizes as many shapes as indicated in self.n_shapes and tries
+        to place them into the output image.
+        """
+        for shape_index in range(self.n_shapes):
+            # Choose a random shape and read it.
+            element_id, shape_img = self.load_random_from(self.shapes_paths)
+            # Randomize its maximum shape and scale it.
+            randomized_size = self.randomize_shape_size(self.max_shape_size)
+            shape_img = utils.scale_image(shape_img, randomized_size)
+            # Randomize its rotation and rotate it
+            pass
+            # Try to place the shape
+            self.try_to_place_shape(shape_img, element_id)
+
     def generate(self):
         """
         Generates the output image containing an artificial diagram composed
@@ -174,35 +238,14 @@ class SyntheticDiagram:
         :return: A tuple containing (Annotation for the generated image in
          format box1 box2 box3..., Output image with the generated diagram).
          Box annotation follow the schema min_x,min_y,max_x,max_y,element_id
-         where the element_id represents the id in the element_id.json, not
-         the final class id.
+         where the element_id represents the id in the element_id.json, NOT
+         a detection class id.
         """
         if self.debug:
             self.__draw_randomized_limits()
 
-        # Define the maximum size of a shape as a function of the minimum size of the diagram.
-        # This could be modified.
-        min_side = np.min([self.rwidth, self.rheight])
-        max_shape_size = int(min_side / self.n_shapes * 2)
+        self.add_shapes()
+        # self.add_connections()
+        # self.add_texts()
 
-        # TODO: Move this procedure to a place_shapes method.
-        for shape_index in range(self.n_shapes):
-            # Choose a random shape and read it.
-            # TODO: Catch error if shapes_paths is empty.
-            shape_path = self.rng.choice(self.shapes_paths)
-            shape_img = cv2.imread(shape_path, cv2.IMREAD_GRAYSCALE)
-            element_id = shape_path.split("/")[-1].split(".")[0].split("-")[3]
-            # Randomize its maximum shape and scale it.
-            randomized_size = self.__randomize_shape_size(max_shape_size)
-            shape_img = utils.scale_image(shape_img, randomized_size)
-            # Try to place the shape
-            self.__place_shape_into_output_img(shape_img, element_id)
-        return self.__get_annotation(), self.output_img
-
-    def get_name(self):
-        """
-        Generates a unique and deterministic filename for a generated diagram.
-        :return: Filename with schema 'synth{md5}.png'
-        """
-        diagram_md5 = hashlib.md5(self.output_img.tobytes()).hexdigest()
-        return f'synth{diagram_md5}.png'
+        return self.get_annotation(), self.output_img

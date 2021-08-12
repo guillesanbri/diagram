@@ -98,8 +98,8 @@ class DiagramGenerator:
         if self.annotations is None:
             warnings.warn("No annotations have been previously generated!")
         self.annotation_file = utils.check_file_path(self.annotation_file)
-        with open(self.annotation_file, 'w') as f:
-            f.write('\n'.join(self.annotations))
+        with open(self.annotation_file, 'w') as fw:
+            fw.write('\n'.join(self.annotations))
 
     def run(self, shapes_paths, connections_paths, texts_paths, classes):
         """
