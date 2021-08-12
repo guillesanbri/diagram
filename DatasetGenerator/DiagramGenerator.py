@@ -72,12 +72,14 @@ class DiagramGenerator:
         class_ids = [i for i in range(len(distinct_suffixes))]
         class_dict = dict(zip(distinct_suffixes, class_ids))
         for annotation in self.annotations:
+            path = annotation.split(" ")[0]
             boxes = annotation.split(" ")[1:]
             boxes_elements = [box.split(",") for box in boxes]
             for box in boxes_elements:
                 box[-1] = str(class_dict[ids_suffixes[box[-1]]])
             translated_boxes = [",".join(be) for be in boxes_elements]
             translated = " ".join(translated_boxes)
+            translated = f"{path} " + translated
             translated_annotations.append(translated)
         self.annotations = translated_annotations
         return dict(zip(class_ids, ids_suffixes.values()))
