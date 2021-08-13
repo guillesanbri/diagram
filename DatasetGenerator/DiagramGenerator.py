@@ -8,7 +8,6 @@ import cv2
 
 
 # TODO: Tests of this class
-# TODO: Randomize number of shapes in each diagram
 # TODO: Generate report of the configuration of each generated dataset
 # TODO: Add loading of shapes, text, and connections correctly.
 # TODO: Pad to square in the preprocessing function to new inputs.
@@ -19,15 +18,18 @@ class DiagramGenerator:
     These diagrams are annotated with bounding boxes based on
     the placed elements.
     """
-    def __init__(self, output_path, quantity, annotation_file="annotation.txt",
-                 output_shape=(1024, 1024), min_shape=(340, 340),
-                 max_placement_iter=5, seed=None, debug=False):
+    def __init__(self, output_path, quantity, shape_n_range,
+                 annotation_file="annotation.txt", output_shape=(1024, 1024),
+                 min_shape=(340, 340), max_placement_iter=5, seed=None,
+                 debug=False):
         """
         Initializes an instance of a DiagramGenerator.
 
         :param output_path: Path of the directory where the generated diagrams
          will be saved.
         :param quantity: Number of diagrams to generate.
+        :param shape_n_range: Range [min, max) from where to sample the
+         randomized number of shapes in each diagram.
         :param annotation_file: File where annotations will be saved.
          If the file it already exists the program will ask if
          overwriting is desired.
@@ -46,6 +48,7 @@ class DiagramGenerator:
         # Diagram parametrization
         # TODO: Add warning if min dimensions are not between a percentage of output shape
         self.quantity = quantity
+        self.shape_n_range = shape_n_range
         self.output_shape = output_shape  # (h, w)
         self.min_shape = min_shape  # (h, w)
         self.max_placement_iter = max_placement_iter
@@ -103,6 +106,31 @@ class DiagramGenerator:
         with open(self.annotation_file, 'w') as fw:
             fw.write('\n'.join(self.annotations))
 
+    def get_random_n_shapes(self):
+        """
+        Gets a random number of shapes between the specified values in
+        self.shape_n_range.
+        **Warning**: This method is fixed on 5 as the current default values
+        to generate the size of a shape (max) is
+        min_size_diagram*2*(1+1.5)/n_shapes and therefore if the n_shapes
+        is less than 5 the shape can be bigger than the diagram, raising an
+        error in the random integer method. However, if this default values
+        change this method will break.
+        TODO: Link this method to the size formula in SyntheticDiagram.
+        TODO: Move this check to the initialization of DiagramGenerator.
+
+        :return: Randomized number of shapes.
+        :raises ValueError: If the minimum value of self.shape_n_range
+         makes the randomized shape size bigger than the diagram making
+         it unable to be placed.
+        """
+        minimum = min(self.shape_n_range)
+        maximum = max(self.shape_n_range)
+        if minimum < 5:
+            raise ValueError("Minimum value of self.shape_n_range can not be"
+                             "less than 5.")
+        return self.rng.integers(minimum, maximum)
+
     def run(self, shapes_paths, connections_paths, texts_paths, classes):
         """
         Initiates the generation of the diagrams. This method parameters allow
@@ -130,12 +158,14 @@ class DiagramGenerator:
             seed = None
             if self.debug:
                 seed = self.rng.integers(self.quantity*100)
+
+            n_shapes = self.get_random_n_shapes()
             synth_diagram = SyntheticDiagram(shapes_paths,
                                              connections_paths,
                                              texts_paths,
                                              self.output_shape,
                                              self.min_shape,
-                                             10, seed=seed)
+                                             n_shapes, seed=seed)
             annotation, diagram = synth_diagram.generate()
             output_path = self.output_path + synth_diagram.get_name()
             annotation = f"{output_path} " + annotation
@@ -158,7 +188,7 @@ if __name__ == "__main__":
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
     ids_suffixes = {**shapes_dict}
 
-    dg = DiagramGenerator("diagrams/", 10, seed=42, debug=True)
+    dg = DiagramGenerator("diagrams/", 1000, (5, 15), seed=42, debug=True)
     annotation_classes = dg.run(shapes_paths, None, None, ids_suffixes)
     classes_json_path = utils.check_file_path('annotated_classes.json')
     with open(classes_json_path, 'w') as f:

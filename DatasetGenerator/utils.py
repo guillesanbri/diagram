@@ -116,6 +116,7 @@ def check_file_path(file):
 
 
 # TODO: Change Tests from TestSyntheticDiagram to TestUtils
+# TODO: Add percentage of overlap to allow overlapping of ie. < 10%
 def overlaps(b1, b2):
     """
     Checks if two boxes given by their upper left and lower right corners
