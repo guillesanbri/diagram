@@ -135,6 +135,16 @@ def overlaps(b1, b2):
     return not (b1_over_b2 or b2_over_b1 or b1_right_b2 or b2_right_b1)
 
 
+def int_mean(*args):
+    sumatory = np.sum(args)
+    return int(sumatory / len(args))
+
+
+def get_box_center(box):
+    return (int_mean(box["ulx"], box["lrx"]),
+            int_mean(box["uly"], box["lry"]))
+
+
 if __name__ == "__main__":
     print(get_shapes_paths("elements/"))
     print(get_shapes_paths("elements/", include_suffixes=["ellipse"]))

@@ -188,7 +188,7 @@ if __name__ == "__main__":
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
     ids_suffixes = {**shapes_dict}
 
-    dg = DiagramGenerator("diagrams/", 1000, (5, 15), seed=42, debug=True)
+    dg = DiagramGenerator("diagrams/", 10, (5, 15), seed=42, debug=True)
     annotation_classes = dg.run(shapes_paths, None, None, ids_suffixes)
     classes_json_path = utils.check_file_path('annotated_classes.json')
     with open(classes_json_path, 'w') as f:
