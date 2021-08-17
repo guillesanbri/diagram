@@ -152,6 +152,22 @@ def get_box_center(box):
             int_mean(box["uly"], box["lry"]))
 
 
+def get_farthest_point_from(origin, points):
+    max_distance_point = origin
+    max_distance = 0
+    for point in points:
+        distance = np.linalg.norm(origin-point)
+        if distance > max_distance:
+            max_distance = distance
+            max_distance_point = point
+    return max_distance_point
+
+
+def get_pixels_coords(image):
+    white_points = np.argwhere(image)
+    return [np.flip(c[:2]) for c in white_points]
+
+
 if __name__ == "__main__":
     print(get_element_paths("shapes"))
     print(get_element_paths("shapes", include_suffixes=["ellipse"]))

@@ -1,4 +1,4 @@
-import collision_detector as cd
+from ConnectionsManager import ConnectionsManager
 import numpy as np
 import utils
 import hashlib
@@ -231,44 +231,17 @@ class SyntheticDiagram:
             # Try to place the shape
             self.try_to_place_shape(shape_img, element_id)
 
-    # TODO: Refactor this method
     def add_connections(self):
         """
         Generates random connections between the shapes that have been placed
         into the output image.
         """
-        # Generate lines from center to center
-        # Get intersections - Convex Hull of the points of each shape?
-        # Draw lines from intersection point to intersection point
-        blank0 = np.zeros(self.output_shape, dtype=np.uint8)
-        lines = blank0.copy()
-        for i, s1 in enumerate(self.placed_shapes):
-            for s2 in self.placed_shapes[i+1:]:
-                if s1 is not s2:
-                    # Get real origins
-                    blank1 = np.zeros(self.output_shape, dtype=np.uint8)
-                    blank2 = np.zeros(self.output_shape, dtype=np.uint8)
-                    roi1 = self.output_img[s1["uly"]:s1["lry"], s1["ulx"]:s1["lrx"]].copy()
-                    roi2 = self.output_img[s2["uly"]:s2["lry"], s2["ulx"]:s2["lrx"]].copy()
-                    blank1[s1["uly"]:s1["lry"], s1["ulx"]:s1["lrx"]] = roi1
-                    blank2[s2["uly"]:s2["lry"], s2["ulx"]:s2["lrx"]] = roi2
-                    c1 = utils.get_box_center(s1)
-                    c2 = utils.get_box_center(s2)
-                    line = cv2.line(blank0.copy(), c1, c2, 255, 5)
-
-                    intersection_img1 = blank1 & line
-                    intersection_points1 = [np.flip(c[:2]) for c in np.argwhere(intersection_img1)]
-                    origin1 = cd.get_farthest_point_from(c1, intersection_points1)
-
-                    intersection_img2 = blank2 & line
-                    intersection_points2 = [np.flip(c[:2]) for c in np.argwhere(intersection_img2)]
-                    origin2 = cd.get_farthest_point_from(c2, intersection_points2)
-
-                    # Check for overlap between
-                    additional_intersections = (self.output_img & line) - intersection_img1 - intersection_img2
-                    if np.all((additional_intersections == 0)):  # No intersections with other shapes
-                        lines = cv2.line(lines, origin1, origin2, 255, 2)
-        self.output_img |= lines
+        cm = ConnectionsManager(synthetic_diagram=self)
+        # Get pairs of valid points between shapes.
+        points = cm.get_valid_points()
+        for point_pair in points:
+            p1, p2 = point_pair
+            self.output_img = cv2.line(self.output_img, p1, p2, 255, 2)
         cv2.imshow("output", self.output_img)
         cv2.waitKey(0)
 
