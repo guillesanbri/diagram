@@ -24,14 +24,17 @@ def get_paths(path, element_ids):
     return paths
 
 
-def get_shapes_paths(elements_path,
-                     include_suffixes=None, exclude_suffixes=None):
+def get_element_paths(element_type, elements_path="elements/",
+                      include_suffixes=None, exclude_suffixes=None):
     """
-    Gets a list containing every path corresponding to a shape image.
+    Gets a list with every image path of a specified element.
     Paths can be filtered by their suffixes, either inclusively or exclusively.
     Suffixes are NOT ids, suffixes are, ie: rectangular-parallelogram,
     triangle, ellipse, etc.
 
+    :param element_type: Type of the element to load paths of, this can take
+     values that are first order keys in the element_id.json file, ie: texts,
+     connections, shapes, etc.
     :param elements_path: Path to the directory where the images of the
      elements are located.
     :param include_suffixes: A list of suffixes to be included in the list.
@@ -46,7 +49,11 @@ def get_shapes_paths(elements_path,
      populated.
     """
     with open("./picture_ids/element_id.json") as f:
-        suffix_dict = json.load(f)["shapes"]
+        try:
+            suffix_dict = json.load(f)[element_type]
+        except KeyError:
+            raise KeyError(f"{element_type} is not a valid element, "
+                           f"check the element_id.json file.")
     if include_suffixes and exclude_suffixes:
         raise ValueError("Only one of the two prefixes lists can be defined"
                          "at the same time.")
@@ -146,9 +153,9 @@ def get_box_center(box):
 
 
 if __name__ == "__main__":
-    print(get_shapes_paths("elements/"))
-    print(get_shapes_paths("elements/", include_suffixes=["ellipse"]))
-    print(get_shapes_paths("elements/", exclude_suffixes=["ellipse"]))
+    print(get_element_paths("shapes"))
+    print(get_element_paths("shapes", include_suffixes=["ellipse"]))
+    print(get_element_paths("shapes", exclude_suffixes=["ellipse"]))
     img = cv2.imread("tests/test_inter.png", cv2.IMREAD_GRAYSCALE)
     res = scale_image(img, 250)
     cv2.imshow("test", res)

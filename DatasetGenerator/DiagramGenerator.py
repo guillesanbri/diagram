@@ -1,4 +1,5 @@
 from SyntheticDiagram import SyntheticDiagram
+from utils import get_element_paths
 from tqdm import tqdm
 import numpy as np
 import warnings
@@ -177,9 +178,10 @@ class DiagramGenerator:
 
 
 if __name__ == "__main__":
-    # Read shapes, connections and texts
-    shapes_dict, shapes_paths = utils.get_shapes_paths("elements/")
+    # Read shapes
+    shapes_dict, shapes_paths = get_element_paths("shapes")
     # Read connections
+    connections_dict, connections_paths = get_element_paths("connections")
     # Read texts
 
     # Dictionary of id:element_suffix
