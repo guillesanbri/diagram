@@ -1,8 +1,9 @@
-import cv2
+import numpy as np
+import math
 import glob
 import json
 import os
-import numpy as np
+import cv2
 
 
 # TODO: Write tests for these functions
@@ -166,6 +167,57 @@ def get_farthest_point_from(origin, points):
 def get_pixels_coords(image):
     white_points = np.argwhere(image)
     return [np.flip(c[:2]) for c in white_points]
+
+def get_angle_two_points(p1, p2, format='decimal'):
+    """
+    Calculates the angle between a line traced from p1 to p2 and the x axis.
+    This function considers the x-axis to increment horizontally and the y-axis
+    to increment downwards.
+
+    :param p1: Origin point (x, y).
+    :param p2: End point (x, y).
+    :param format: Format of the result, it can be 'decimal' or 'radian'.
+     Default is 'decimal'.
+    :return: Angle in the specified format.
+    """
+    valid_formats = {'decimal', 'radian'}
+    if format not in valid_formats:
+        raise ValueError(f"Format must be one of {valid_formats}")
+    delta_x = p2[0] - p1[0]
+    delta_y = p1[1] - p2[1]
+    angle_rad = math.atan2(delta_y, delta_x)
+    if format == 'decimal':
+        return angle_rad * 180 / math.pi
+    elif format == 'radian':
+        return angle_rad
+
+
+# TODO: Document and explain this method
+def get_connection_image_corner(decimal_angle):
+    """
+    Gets the corner that should be superposed with the origin of a
+    connection image to ensure that the rotation fits between the points.
+    Points follow the convention:
+
+    (0, 0)----------(1, 0)
+      |                |
+      |                |
+      |                |
+      |                |
+      |                |
+    (0, 1)----------(1, 1)
+
+    :param decimal_angle: Decimal angle in the range (-180, 180]
+    :return:
+    """
+    if 0 < decimal_angle <= 90:
+        return [0, 1]
+    elif 90 < decimal_angle <= 180:
+        return [1, 1]
+    elif -90 < decimal_angle <= 0:
+        return [0, 0]
+    elif -180 < decimal_angle <= -90:
+        return [1, 0]
 
 
 if __name__ == "__main__":

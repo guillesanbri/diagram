@@ -1,4 +1,5 @@
 from ConnectionsManager import ConnectionsManager
+from PIL import Image
 import numpy as np
 import utils
 import hashlib
@@ -241,9 +242,31 @@ class SyntheticDiagram:
         points = cm.get_valid_points()
         for point_pair in points:
             p1, p2 = point_pair
+            # TODO: 5. could be first and group 1 to 6 (minus 5) in a math_img_to_points method
+            # 1. Get distance between points
+            distance = np.linalg.norm(p2 - p1)
+            # 2. Get angle between points
+            angle = utils.get_angle_two_points(p1, p2)
+            # 3. Get corner of the connection
+            corner = utils.get_connection_image_corner(angle)
+
+            # 4. Load random connection
+            # TODO: connection_img
+            connection_img = None
+            # 5. Scale connection to match distance in the x-axis
+            new_shape = (int(distance), connection_img.shape[0])
+            connection_img = cv2.resize(connection_img, new_shape,
+                                        interpolation=cv2.INTER_NEAREST_EXACT)
+            # 6. Rotate image to match the angle between points
+            # TODO: Test the speed taking into account the conversion from np to PIL
+            connection_img_PIL = Image.fromarray(connection_img)
+            rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
+            connection_img = np.array(rotated_PIL)
+            # Place the element taking into account the selected corner
+
             self.output_img = cv2.line(self.output_img, p1, p2, 255, 2)
-        cv2.imshow("output", self.output_img)
-        cv2.waitKey(0)
+        # cv2.imshow("output", self.output_img)
+        # cv2.waitKey(0)
 
     def generate(self):
         """
