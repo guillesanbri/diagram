@@ -60,6 +60,7 @@ class DiagramGenerator:
 
     # TODO: Test if the dictionary can be modified to group all shapes ->
     # it can, but proper testing has to be done.
+    # TODO: This method relies on the order of the dict and breaks in python < 3.7
     def __translate_annotations(self, ids_suffixes):
         """
         Updates the self.annotations array to substitute each box id by
@@ -86,7 +87,7 @@ class DiagramGenerator:
             translated = f"{path} " + translated
             translated_annotations.append(translated)
         self.annotations = translated_annotations
-        return dict(zip(class_ids, ids_suffixes.values()))
+        return dict(zip(class_ids, class_dict.keys()))  # ids_suffixes.values()
 
     def __save_annotations(self):
         """
@@ -188,10 +189,10 @@ if __name__ == "__main__":
     # TODO: Facilitate overwrite
     # Element tagging can be overwritten as follows
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
-    ids_suffixes = {**shapes_dict}
+    ids_suffixes = {**shapes_dict, **connections_dict}
 
     dg = DiagramGenerator("diagrams/", 10, (5, 15), seed=42, debug=True)
-    annotation_classes = dg.run(shapes_paths, None, None, ids_suffixes)
+    annotation_classes = dg.run(shapes_paths, connections_paths, None, ids_suffixes)
     classes_json_path = utils.check_file_path('annotated_classes.json')
     with open(classes_json_path, 'w') as f:
         json.dump(annotation_classes, f)

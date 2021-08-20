@@ -115,31 +115,37 @@ class SyntheticDiagram:
         ys0 = self.rng.integers(self.y0, self.y0 + self.rheight - shape_shape[0])
         return xs0, ys0
 
-    def place_element(self, x, y, image, box_dict):
+    def place_element(self, image, box):
         """
-        Places the element defined by an image and a box_dict into the output
+        Places the element defined by an image and a box into the output
         image and appends its position to self.placed_shapes.
 
-        :param x: Coordinate of the point of the output image where the upper
-         left corner of the element will be placed.
-        :param y: Coordinate of the point of the output image where the upper
-         left corner of the element will be placed.
         :param image: OpenCV image (np.array) containing the element that
          is going to be placed.
-        :param box_dict: Box denoted by a dictionary with at least the keys
+        :param box: Box denoted by a dictionary with at least the keys
          ulx, uly (upper left); lrx, lry (lower right) and id (element_id).
         """
         try:
             required_keys = ["ulx", "uly", "lrx", "lry", "id"]
             for key in required_keys:
-                _ = box_dict[key]
+                _ = box[key]
         except KeyError:
             raise KeyError("box_dict does not have the required keys "
                            "to be stored")
         # Place the shape
-        self.output_img[y:y + image.shape[0], x:x + image.shape[1]] |= image
+        self.output_img[box["uly"]:box["lry"], box["ulx"]:box["lrx"]] |= image
         # Store the placed element
-        self.placed_shapes.append(box_dict)
+        self.placed_shapes.append(box)
+
+    # TODO: Move to utils
+    def get_element_box_dict(self, element_img, x, y, element_id, corner=None):
+        if corner is None:
+            corner = [0, 0]
+        return {"ulx": x - element_img.shape[1] * corner[0],
+                "uly": y - element_img.shape[0] * corner[1],
+                "lrx": x + element_img.shape[1] * (1 - corner[0]),
+                "lry": y + element_img.shape[0] * (1 - corner[1]),
+                "id": element_id}
 
     def try_to_place_shape(self, shape_img, element_id):
         """
@@ -155,11 +161,7 @@ class SyntheticDiagram:
         for i in range(self.max_placement_iter):
             # Randomize placement of the shape.
             xs0, ys0 = self.randomize_shape_location(shape_img.shape)
-            new_shape_position = {"ulx": xs0,
-                                  "uly": ys0,
-                                  "lrx": xs0 + shape_img.shape[1],
-                                  "lry": ys0 + shape_img.shape[0],
-                                  "id": element_id}
+            new_shape_position = self.get_element_box_dict(shape_img, xs0, ys0, element_id)
             # Check for overlapping.
             overlapping = False
             for shape_position in self.placed_shapes:
@@ -167,7 +169,7 @@ class SyntheticDiagram:
                     overlapping = True
                     break
             if not overlapping:
-                self.place_element(xs0, ys0, shape_img, new_shape_position)
+                self.place_element(shape_img, new_shape_position)
                 break
 
     def __draw_randomized_limits(self):
@@ -242,7 +244,7 @@ class SyntheticDiagram:
         points = cm.get_valid_points()
         for point_pair in points:
             p1, p2 = point_pair
-            # TODO: 5. could be first and group 1 to 6 (minus 5) in a math_img_to_points method
+            # TODO: 4. could be first and group 1 to 6 (minus 4) in a match_img_to_points method
             # 1. Get distance between points
             distance = np.linalg.norm(p2 - p1)
             # 2. Get angle between points
@@ -251,8 +253,7 @@ class SyntheticDiagram:
             corner = utils.get_connection_image_corner(angle)
 
             # 4. Load random connection
-            # TODO: connection_img
-            connection_img = None
+            connection_id, connection_img = self.load_random_from(self.connections_paths)
             # 5. Scale connection to match distance in the x-axis
             new_shape = (int(distance), connection_img.shape[0])
             connection_img = cv2.resize(connection_img, new_shape,
@@ -263,10 +264,11 @@ class SyntheticDiagram:
             rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
             connection_img = np.array(rotated_PIL)
             # Place the element taking into account the selected corner
-
-            self.output_img = cv2.line(self.output_img, p1, p2, 255, 2)
-        # cv2.imshow("output", self.output_img)
-        # cv2.waitKey(0)
+            connection_box = self.get_element_box_dict(connection_img,
+                                                       *p1,
+                                                       connection_id,
+                                                       corner)
+            self.place_element(connection_img, connection_box)
 
     def generate(self):
         """
