@@ -227,41 +227,47 @@ class SyntheticDiagram:
             # Try to place the shape
             self.try_to_place_shape(shape_img, element_id)
 
-    def add_connections(self):
+    def add_connections(self, connection_dropout=0.2):
         """
         Generates random connections between the shapes that have been placed
         into the output image.
+
+        :param connection_dropout: Percentage of the connections that will be
+         discarded and therefore won't appear in the resulting diagram. Default
+         value is 0.2 (20% of connections are dropped).
         """
         cm = ConnectionsManager(synthetic_diagram=self)
         # Get pairs of valid points between shapes.
         points = cm.get_valid_points()
+        connection_dropout_prob = 1 - connection_dropout
         for point_pair in points:
-            p1, p2 = point_pair
-            # TODO: 4. could be first and group 1 to 6 (minus 4) in a match_img_to_points method
-            # 1. Get distance between points
-            distance = np.linalg.norm(p2 - p1)
-            # 2. Get angle between points
-            angle = utils.get_angle_two_points(p1, p2)
-            # 3. Get corner of the connection
-            corner = utils.get_connection_image_corner(angle)
+            if self.rng.random() <= connection_dropout_prob:
+                p1, p2 = point_pair
+                # TODO: 4. could be first and group 1 to 6 (minus 4) in a match_img_to_points method
+                # 1. Get distance between points
+                distance = np.linalg.norm(p2 - p1)
+                # 2. Get angle between points
+                angle = utils.get_angle_two_points(p1, p2)
+                # 3. Get corner of the connection
+                corner = utils.get_connection_image_corner(angle)
 
-            # 4. Load random connection
-            connection_id, connection_img = self.load_random_from(self.connections_paths)
-            # 5. Scale connection to match distance in the x-axis
-            new_shape = (int(distance), connection_img.shape[0])
-            connection_img = cv2.resize(connection_img, new_shape,
-                                        interpolation=cv2.INTER_NEAREST_EXACT)
-            # 6. Rotate image to match the angle between points
-            # TODO: Test the speed taking into account the conversion from np to PIL
-            connection_img_PIL = Image.fromarray(connection_img)
-            rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
-            connection_img = np.array(rotated_PIL)
-            # Place the element taking into account the selected corner
-            connection_box = self.get_element_box_dict(connection_img,
-                                                       *p1,
-                                                       connection_id,
-                                                       corner)
-            self.place_element(connection_img, connection_box)
+                # 4. Load random connection
+                connection_id, connection_img = self.load_random_from(self.connections_paths)
+                # 5. Scale connection to match distance in the x-axis
+                new_shape = (int(distance), connection_img.shape[0])
+                connection_img = cv2.resize(connection_img, new_shape,
+                                            interpolation=cv2.INTER_NEAREST_EXACT)
+                # 6. Rotate image to match the angle between points
+                # TODO: Test the speed taking into account the conversion from np to PIL
+                connection_img_PIL = Image.fromarray(connection_img)
+                rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
+                connection_img = np.array(rotated_PIL)
+                # Place the element taking into account the selected corner
+                connection_box = self.get_element_box_dict(connection_img,
+                                                           *p1,
+                                                           connection_id,
+                                                           corner)
+                self.place_element(connection_img, connection_box)
 
     def generate(self):
         """
