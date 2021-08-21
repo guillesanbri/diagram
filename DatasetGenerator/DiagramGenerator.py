@@ -9,10 +9,7 @@ import cv2
 
 
 # TODO: Tests of this class
-# TODO: Generate report of the configuration of each generated dataset
-# TODO: Add loading of shapes, text, and connections correctly.
 # TODO: Pad to square in the preprocessing function to new inputs.
-# TODO: Add estimation of the size of the dataset.
 class DiagramGenerator:
     """
     Object to create a set of synthetic parametrized diagrams.
@@ -59,7 +56,7 @@ class DiagramGenerator:
         self.annotations = []
 
     # TODO: Test if the dictionary can be modified to group all shapes ->
-    # it can, but proper testing has to be done.
+    #   it can, but proper testing has to be done.
     # TODO: This method relies on the order of the dict and breaks in python < 3.7
     def __translate_annotations(self, ids_suffixes):
         """
@@ -186,7 +183,6 @@ if __name__ == "__main__":
     # Read texts
 
     # Dictionary of id:element_suffix
-    # TODO: Facilitate overwrite
     # Element tagging can be overwritten as follows
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
     ids_suffixes = {**shapes_dict, **connections_dict}

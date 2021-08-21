@@ -6,8 +6,6 @@ import hashlib
 import cv2
 
 
-# TODO: Randomize rotation of shapes before placing them (Care with annotations!).
-# TODO: Add text and connections to annotations.
 # TODO: Test this class.
 class SyntheticDiagram:
     """
@@ -94,11 +92,6 @@ class SyntheticDiagram:
         lower_limit = size  # This could be modified
         upper_limit = int((1 + self.shape_size_rng_range) * size)
         return self.rng.integers(lower_limit, upper_limit)
-
-    # TODO: Write this method.
-    # TODO: Test behaviour of the model with and without rotations.
-    def randomize_shape_rotation(self):
-        pass
 
     def randomize_shape_location(self, shape_shape):
         """
