@@ -1,3 +1,4 @@
+from PIL import Image
 import numpy as np
 import math
 import glob
@@ -199,6 +200,31 @@ def get_element_box_dict(element_img, x, y, element_id, corner=None):
             "lrx": x + element_img.shape[1] * (1 - corner[0]),
             "lry": y + element_img.shape[0] * (1 - corner[1]),
             "id": element_id}
+
+
+def match_connection_img_to_points(image, connection_id, p1, p2):
+    # Get distance between points
+    distance = np.linalg.norm(p2 - p1)
+    # Get angle between points
+    angle = get_angle_two_points(p1, p2)
+    # Get corner of the connection
+    corner = get_connection_image_corner(angle)
+
+    # Scale connection to match distance in the x-axis
+    new_shape = (int(distance), image.shape[0])
+    connection_img = cv2.resize(image, new_shape,
+                                interpolation=cv2.INTER_NEAREST_EXACT)
+    # Rotate image to match the angle between points
+    # TODO: Test the speed taking into account the conversion from np to PIL
+    connection_img_PIL = Image.fromarray(connection_img)
+    rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
+    connection_img = np.array(rotated_PIL)
+    # Generate the element box taking into account the selected corner
+    connection_box = get_element_box_dict(connection_img,
+                                          *p1,
+                                          connection_id,
+                                          corner)
+    return connection_box, connection_img
 
 
 # TODO: Document and explain this method
