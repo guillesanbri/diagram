@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from sklearn.cluster import DBSCAN
+from sklearn.svm import SVC
 from debug_tools import visualize_clusters, draw_bbox
 
 """
@@ -51,6 +52,7 @@ class ElementExtractor:
         self.binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 6)
+        self.image_area = self.image.shape[0] * self.image.shape[1]
         self.elements = None
 
     @staticmethod
@@ -67,6 +69,17 @@ class ElementExtractor:
         y1 = np.max(coordinates.T[0])
         x1 = np.max(coordinates.T[1])
         return [y0, x0, y1, x1]
+
+    @staticmethod
+    def get_bbox_area(bbox):
+        """
+        Calculates the area of a given bounding box.
+
+        :param bbox: An array [y0, x0, y1, x1] where p0 is the upper left
+         corner and p1 the lower right one.
+        :return: Area of the specified bounding box.
+        """
+        return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
 
     def extract(self, debug_clustering=False, debug_segmentation=False):
         """
@@ -95,7 +108,8 @@ class ElementExtractor:
             # Store bounding box for each label defined by y0, x0, y1, x1
             # being p0 the upper left corner and p1 the lower right one.
             bbox = ElementExtractor.coordinates_to_bbox(labels_coords)
-            elements.append(bbox)
+            if self.get_bbox_area(bbox) / self.image_area * 1000 >= 1:
+                elements.append(bbox)
         self.elements = elements
         if debug_segmentation:
             debug_bboxes = self.image.copy()
@@ -126,7 +140,6 @@ class ElementExtractor:
 
 
 if __name__ == "__main__":
-    # TODO: Filter out small blobs
     ee = ElementExtractor("pictures/00000-000-000-a00-002.jpg")
     ee.extract(debug_clustering=True, debug_segmentation=True)
     ee.save_elements("elements/")
