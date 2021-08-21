@@ -191,6 +191,16 @@ def get_angle_two_points(p1, p2, format='decimal'):
         return angle_rad
 
 
+def get_element_box_dict(element_img, x, y, element_id, corner=None):
+    if corner is None:
+        corner = [0, 0]
+    return {"ulx": x - element_img.shape[1] * corner[0],
+            "uly": y - element_img.shape[0] * corner[1],
+            "lrx": x + element_img.shape[1] * (1 - corner[0]),
+            "lry": y + element_img.shape[0] * (1 - corner[1]),
+            "id": element_id}
+
+
 # TODO: Document and explain this method
 def get_connection_image_corner(decimal_angle):
     """

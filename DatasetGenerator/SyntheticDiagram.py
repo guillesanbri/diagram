@@ -130,16 +130,6 @@ class SyntheticDiagram:
         # Store the placed element
         self.placed_shapes.append(box)
 
-    # TODO: Move to utils
-    def get_element_box_dict(self, element_img, x, y, element_id, corner=None):
-        if corner is None:
-            corner = [0, 0]
-        return {"ulx": x - element_img.shape[1] * corner[0],
-                "uly": y - element_img.shape[0] * corner[1],
-                "lrx": x + element_img.shape[1] * (1 - corner[0]),
-                "lry": y + element_img.shape[0] * (1 - corner[1]),
-                "id": element_id}
-
     def try_to_place_shape(self, shape_img, element_id):
         """
         Tries to place a given shape image into the output image taking into
@@ -154,7 +144,7 @@ class SyntheticDiagram:
         for i in range(self.max_placement_iter):
             # Randomize placement of the shape.
             xs0, ys0 = self.randomize_shape_location(shape_img.shape)
-            new_shape_position = self.get_element_box_dict(shape_img, xs0, ys0, element_id)
+            new_shape_position = utils.get_element_box_dict(shape_img, xs0, ys0, element_id)
             # Check for overlapping.
             overlapping = False
             for shape_position in self.placed_shapes:
