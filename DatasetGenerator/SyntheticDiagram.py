@@ -253,7 +253,7 @@ class SyntheticDiagram:
                 rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
                 connection_img = np.array(rotated_PIL)
                 # Place the element taking into account the selected corner
-                connection_box = self.get_element_box_dict(connection_img,
+                connection_box = utils.get_element_box_dict(connection_img,
                                                            *p1,
                                                            connection_id,
                                                            corner)
