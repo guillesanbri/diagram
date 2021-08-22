@@ -5,15 +5,12 @@ from sklearn.cluster import DBSCAN
 from sklearn.svm import SVC
 from debug_tools import visualize_clusters, draw_bbox
 
-"""
-TODO:
-- Learn about DBSCAN and OPTICS parameters.
-- Change DBSCAN parameters to be a function of the image size.
-- Write tests for save_elements and extract.
-- Test dataset fabrication directly in binary format.
-"""
 
-
+# TODO
+#   - Learn about DBSCAN and OPTICS parameters.
+#   - Change DBSCAN parameters to be a function of the image size.
+#   - Write tests for save_elements and extract.
+#   - Test dataset fabrication directly in binary format.
 class ElementExtractor:
     """
     Object to extract elements from a picture where a series of base

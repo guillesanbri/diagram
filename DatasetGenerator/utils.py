@@ -144,16 +144,40 @@ def overlaps(b1, b2):
 
 
 def int_mean(*args):
-    sumatory = np.sum(args)
-    return int(sumatory / len(args))
+    """
+    Calculates the mean of the numbers passed as arguments, casting the result
+    as an integer.
+
+    :param args: Numbers to be averaged.
+    :return: Integer casting of the mean of the numbers.
+    """
+    return np.mean(args, dtype=np.int32)
 
 
 def get_box_center(box):
+    """
+    Gets the center (x, y) of a box.
+
+    :param box: Box denoted by a dictionary with at least the keys ulx, uly
+     (upper left) and lrx, lry (lower right).
+    :return: A tuple of integers (x_center, y_center).
+    """
     return (int_mean(box["ulx"], box["lrx"]),
             int_mean(box["uly"], box["lry"]))
 
 
 def get_farthest_point_from(origin, points):
+    """
+    Selects the farthest point from the origin given a list of points.
+    Take into account that both the origin and the points in the points list
+    must share the coordinates order (x,y or y,x).
+
+    :param origin: Point to calculate distances from.
+    :param points: List of points where the farthest to origin will be selected
+     from.
+    :return: The point from the points list as declared in said list with the
+     largest distance to the origin point.
+    """
     max_distance_point = origin
     max_distance = 0
     for point in points:
@@ -165,10 +189,18 @@ def get_farthest_point_from(origin, points):
 
 
 def get_pixels_coords(image):
+    """
+    Given a binary image, returns a list of the coordinates of every non-zero
+    pixel in said image. Positions are given in (x, y) coordinates.
+
+    :param image: Binary images to extract coordinates from.
+    :return: List of positions of non-zero pixels in (x, y) format.
+    """
     white_points = np.argwhere(image)
     return [np.flip(c[:2]) for c in white_points]
 
-def get_angle_two_points(p1, p2, format='decimal'):
+
+def get_angle_two_points(p1, p2, out_format='decimal'):
     """
     Calculates the angle between a line traced from p1 to p2 and the x axis.
     This function considers the x-axis to increment horizontally and the y-axis
@@ -176,23 +208,46 @@ def get_angle_two_points(p1, p2, format='decimal'):
 
     :param p1: Origin point (x, y).
     :param p2: End point (x, y).
-    :param format: Format of the result, it can be 'decimal' or 'radian'.
+    :param out_format: Format of the result, it can be 'decimal' or 'radian'.
      Default is 'decimal'.
     :return: Angle in the specified format.
     """
     valid_formats = {'decimal', 'radian'}
-    if format not in valid_formats:
+    if out_format not in valid_formats:
         raise ValueError(f"Format must be one of {valid_formats}")
     delta_x = p2[0] - p1[0]
     delta_y = p1[1] - p2[1]
     angle_rad = math.atan2(delta_y, delta_x)
-    if format == 'decimal':
+    if out_format == 'decimal':
         return angle_rad * 180 / math.pi
-    elif format == 'radian':
+    elif out_format == 'radian':
         return angle_rad
 
 
 def get_element_box_dict(element_img, x, y, element_id, corner=None):
+    """
+    Generates a box dictionary from the specified information. The point
+    defined by the (x, y) parameters will match the specified corner.
+
+    :param element_img: Image of the element to be described by the dictionary.
+    :param x: Horizontal coordinate of the desired position.
+    :param y: Vertical coordinate of the desired position.
+    :param element_id: Id of the element to be described by the dictionary.
+    :param corner: Corner that the image will take as actual origin for the
+     image. This corner must follow the format:
+         (0, 0)----------(1, 0)
+           |                |
+           |                |
+           |                |
+           |                |
+           |                |
+         (0, 1)----------(1, 1)
+     (NOTE: NO CHECK IS PERFORMED BY THIS FUNCTION TO VERIFY THAT THE ELEMENT
+      IMAGE WILL FIT IN THE DIAGRAM IMAGE WHEN ITS COORDINATES ARE MODIFIED).
+    :return: Box dictionary with the keys "ulx", "uly", "lrx", lry" and "id"
+     corresponding to the final upper left and lower right coordinate where
+     the image should be placed.
+    """
     if corner is None:
         corner = [0, 0]
     return {"ulx": x - element_img.shape[1] * corner[0],
@@ -203,6 +258,17 @@ def get_element_box_dict(element_img, x, y, element_id, corner=None):
 
 
 def match_connection_img_to_points(image, connection_id, p1, p2):
+    """
+    Transforms a connection image where the connection is placed horizontally
+    to fit between two given points connecting them.
+
+    :param image: Image with the connection (Horizontally placed).
+    :param connection_id: Id of the connection being modified.
+    :param p1: Origin point where the connection origin will be placed.
+    :param p2: End point where the connection end will be placed.
+    :return: Tuple containing (the box dictionary defining the connection and
+     its position, the modified connection image).
+    """
     # Get distance between points
     distance = np.linalg.norm(p2 - p1)
     # Get angle between points
@@ -227,23 +293,26 @@ def match_connection_img_to_points(image, connection_id, p1, p2):
     return connection_box, connection_img
 
 
-# TODO: Document and explain this method
 def get_connection_image_corner(decimal_angle):
     """
     Gets the corner that should be superposed with the origin of a
     connection image to ensure that the rotation fits between the points.
-    Points follow the convention:
-
-    (0, 0)----------(1, 0)
-      |                |
-      |                |
-      |                |
-      |                |
-      |                |
-    (0, 1)----------(1, 1)
+    Corners follow the convention:
+        (0, 0)----------(1, 0)
+          |                |
+          |                |
+          |                |
+          |                |
+          |                |
+        (0, 1)----------(1, 1)
+    This corner election ensures that, for example, a horizontal connection
+    that has been rotated 45 degrees, should have its origin in the lower
+    left corner instead of the upper left to ensure that the connection line
+    is not misplaced.
 
     :param decimal_angle: Decimal angle in the range (-180, 180]
-    :return:
+    :return: Corner as specified above corresponding to the origin corner of
+     the rotated connection.
     """
     if 0 < decimal_angle <= 90:
         return [0, 1]

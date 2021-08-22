@@ -3,6 +3,7 @@ import utils
 import cv2
 
 
+# TODO: Update documentation
 class ConnectionsManager:
     def __init__(self, synthetic_diagram):
         self.synth_diagram = synthetic_diagram
