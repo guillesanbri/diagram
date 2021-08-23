@@ -1,5 +1,3 @@
-import sys
-
 from SyntheticDiagram import SyntheticDiagram
 from utils import get_element_paths
 from tqdm import tqdm
@@ -7,6 +5,7 @@ import numpy as np
 import warnings
 import utils
 import json
+import sys
 import cv2
 
 
