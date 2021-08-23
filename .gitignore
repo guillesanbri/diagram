@@ -1,7 +1,7 @@
 # Dataset files (images)
-DatasetGenerator/pictures/
-DatasetGenerator/elements/
-DatasetGenerator/diagrams/
+**/pictures/
+**/elements/
+**/diagrams/
 
 # Pycharm
 .idea/**

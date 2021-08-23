@@ -2,15 +2,12 @@ import cv2
 import numpy as np
 from PIL import Image
 from sklearn.cluster import DBSCAN
-from sklearn.svm import SVC
-from debug_tools import visualize_clusters, draw_bbox
+from DatasetGenerator.debug_tools import visualize_clusters, draw_bbox
 
 
 # TODO
 #   - Learn about DBSCAN and OPTICS parameters.
-#   - Change DBSCAN parameters to be a function of the image size.
 #   - Write tests for save_elements and extract.
-#   - Test dataset fabrication directly in binary format.
 class ElementExtractor:
     """
     Object to extract elements from a picture where a series of base
@@ -24,7 +21,7 @@ class ElementExtractor:
     ee.save_elements("output/")
     """
 
-    def __init__(self, image_path):
+    def __init__(self, image_path, image):
         """
         Initializes an instance of ElementExtractor.
 
@@ -42,13 +39,15 @@ class ElementExtractor:
         self.device_id = info[2]
         self.element_id = info[3]
         self.tool_id = info[4]
-        self.image = cv2.imread(image_path)
+        self.image = image  # cv2.imread(image_path)
         if self.image is None:
             raise FileNotFoundError("Image could not be loaded.")
         self.image_grayscale = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         self.binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 6)
+        self.cluster_vis = None
+        self.bounding_boxes = None
         self.image_area = self.image.shape[0] * self.image.shape[1]
         self.elements = None
 
@@ -78,11 +77,14 @@ class ElementExtractor:
         """
         return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
 
-    def extract(self, debug_clustering=False, debug_segmentation=False):
+    def extract(self, eps=20, min_samples=20, debug_clustering=False,
+                debug_segmentation=False):
         """
         Populates the self.elements attribute with an array of the coordinates
         of every element in the image.
 
+        :param eps: Eps parameter of the clustering algorithm.
+        :param min_samples: Min_samples parameter of the clustering algorithm.
         :param debug_clustering: If True, shows an opencv GUI with an image with
          each cluster colorized of a single color.
         :param debug_segmentation: If True, shows an opencv GUI with an image where
@@ -92,10 +94,10 @@ class ElementExtractor:
         # Coords are retrieved as follows: [[y0, x0], [y1, x1], ...] (using opencv image coords)
         coordinates = np.argwhere(self.binarized)
         # Clustering is done via DBSCAN, OPTICS may be a (memory) cheaper choice
-        clustering = DBSCAN(eps=20, min_samples=20).fit(coordinates)
+        clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(coordinates)
+        self.cluster_vis = visualize_clusters(self.image.copy(), coordinates, clustering.labels_)
         if debug_clustering:
-            cluster_vis = visualize_clusters(self.image.copy(), coordinates, clustering.labels_)
-            cv2.imshow("clusters", cluster_vis)
+            cv2.imshow("clusters", self.cluster_vis)
             cv2.waitKey(0)
         # DBSCAN tags outliers as -1, so those values are not considered.
         elements = []
@@ -108,10 +110,11 @@ class ElementExtractor:
             if self.get_bbox_area(bbox) / self.image_area * 1000 >= 1:
                 elements.append(bbox)
         self.elements = elements
+        debug_bboxes = self.image.copy()
+        for bbox in self.elements:
+            debug_bboxes = draw_bbox(debug_bboxes, bbox)
+        self.bounding_boxes = debug_bboxes
         if debug_segmentation:
-            debug_bboxes = self.image.copy()
-            for bbox in self.elements:
-                debug_bboxes = draw_bbox(debug_bboxes, bbox)
             cv2.imshow("Bounding boxes", debug_bboxes)
             cv2.waitKey(0)
 
