@@ -1,3 +1,5 @@
+import sys
+
 from SyntheticDiagram import SyntheticDiagram
 from utils import get_element_paths
 from tqdm import tqdm
@@ -44,7 +46,6 @@ class DiagramGenerator:
         self.output_path = output_path
         self.annotation_file = annotation_file
         # Diagram parametrization
-        # TODO: Add warning if min dimensions are not between a percentage of output shape
         self.quantity = quantity
         self.shape_n_range = shape_n_range
         self.output_shape = output_shape  # (h, w)
@@ -54,10 +55,13 @@ class DiagramGenerator:
         self.rng = np.random.default_rng(seed)
         # Annotations
         self.annotations = []
+        # This class relies on dict ordering and breaks in python < 3.7
+        if sys.version_info[:2] < (3, 7):
+            raise RuntimeError("The python interpreter version must be "
+                               "at least 3.7")
 
     # TODO: Test if the dictionary can be modified to group all shapes ->
     #   it can, but proper testing has to be done.
-    # TODO: This method relies on the order of the dict and breaks in python < 3.7
     def __translate_annotations(self, ids_suffixes):
         """
         Updates the self.annotations array to substitute each box id by
