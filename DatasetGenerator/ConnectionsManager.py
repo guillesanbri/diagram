@@ -3,9 +3,18 @@ import utils
 import cv2
 
 
-# TODO: Update documentation
 class ConnectionsManager:
+    """
+    Object in charge of organizing and transforming connections in
+    a given SyntheticDiagram where shapes have been placed.
+    """
     def __init__(self, synthetic_diagram):
+        """
+        Initializes an instance of a ConnectionManager.
+
+        :param synthetic_diagram: Instance of the SyntheticDiagram class where
+         the shapes that are going to be connected have been placed.
+        """
         self.synth_diagram = synthetic_diagram
         self.diagram = self.synth_diagram.output_img.copy()
         self.output_shape = self.synth_diagram.output_shape
@@ -30,6 +39,13 @@ class ConnectionsManager:
         return blank
 
     def get_valid_points(self):
+        """
+        Gets a list of all the valid pairs of points between every two shapes
+        where a connection can be placed taking into account that no connection
+        can overlap with a shape that is located between another two shapes.
+
+        :return: List of pairs of points in the format [[(x, y), (x, y)], ...].
+        """
         for i, s1 in enumerate(self.synth_diagram.placed_shapes):
             for s2 in self.synth_diagram.placed_shapes[i + 1:]:
                 # For every two shapes in the diagram
