@@ -1,6 +1,6 @@
-import cv2
 import numpy as np
 import random
+import cv2
 
 
 def visualize_clusters(image, coordinates, labels):

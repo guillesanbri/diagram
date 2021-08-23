@@ -1,8 +1,7 @@
-import cv2
-import numpy as np
-from PIL import Image
+from DatasetGenerator.utils.debug_tools.debug_tools import visualize_clusters, draw_bbox
 from sklearn.cluster import DBSCAN
-from DatasetGenerator.debug_tools import visualize_clusters, draw_bbox
+import numpy as np
+import cv2
 
 
 # TODO

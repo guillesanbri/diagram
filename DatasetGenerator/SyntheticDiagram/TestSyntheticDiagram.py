@@ -1,5 +1,5 @@
+from DatasetGenerator.SyntheticDiagram import SyntheticDiagram
 import unittest
-from SyntheticDiagram import SyntheticDiagram
 
 
 class TestSyntheticDiagram(unittest.TestCase):

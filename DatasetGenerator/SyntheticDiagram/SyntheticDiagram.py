@@ -1,6 +1,6 @@
-from ConnectionsManager import ConnectionsManager
+from DatasetGenerator.ConnectionsManager import ConnectionsManager
+import DatasetGenerator.utils.utils as utils
 import numpy as np
-import utils
 import hashlib
 import cv2
 

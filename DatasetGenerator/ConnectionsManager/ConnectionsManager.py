@@ -1,5 +1,5 @@
+import DatasetGenerator.utils as utils
 import numpy as np
-import utils
 import cv2
 
 
