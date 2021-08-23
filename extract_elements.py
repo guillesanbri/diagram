@@ -30,7 +30,8 @@ def show_element_extractor(eps, min_samples):
 
 if __name__ == "__main__":
     # Get list of the paths of the pictures with elements to extract
-    pictures = ["DatasetGenerator/pictures/00000-000-000-a00-002.jpg"]
+    pictures = ["DatasetGenerator/pictures/00000-000-000-a00-002.jpg",
+                "DatasetGenerator/pictures/easy1-aaa-bbb-ccc-ddd.jpeg"]
     # Create window
     cv2.namedWindow(window, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window, 720, 720)

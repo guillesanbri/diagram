@@ -1,4 +1,4 @@
-from bounding_box import bounding_box as bb
+from DatasetGenerator.bounding_box import bounding_box as bb
 import random
 import json
 import cv2

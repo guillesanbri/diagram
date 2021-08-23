@@ -50,8 +50,7 @@ def get_element_paths(element_type, elements_path="elements/",
     :raises ValueError: If both include_suffixes and exclude_suffixes are
      populated.
     """
-    print(os.getcwd())
-    with open("./picture_ids/element_id.json") as f:
+    with open("picture_ids/element_id.json") as f:
         try:
             suffix_dict = json.load(f)[element_type]
         except KeyError:
