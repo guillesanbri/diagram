@@ -284,7 +284,6 @@ def match_connection_img_to_points(image, connection_id, p1, p2):
     connection_img = cv2.resize(image, new_shape,
                                 interpolation=cv2.INTER_NEAREST_EXACT)
     # Rotate image to match the angle between points
-    # TODO: Test the speed taking into account the conversion from np to PIL
     connection_img_PIL = Image.fromarray(connection_img)
     rotated_PIL = connection_img_PIL.rotate(angle, expand=True)
     connection_img = np.array(rotated_PIL)
