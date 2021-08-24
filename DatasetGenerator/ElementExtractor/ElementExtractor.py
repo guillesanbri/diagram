@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 
 
-# TODO: Learn about DBSCAN and OPTICS parameters.
 class ElementExtractor:
     """
     Object to extract elements from a picture where a series of base

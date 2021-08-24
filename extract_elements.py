@@ -12,14 +12,12 @@ def on_trackbar_eps(val):
     global eps
     eps = val
     show_element_extractor(eps, min_samples)
-    print(eps, min_samples)
 
 
 def on_trackbar_samples(val):
     global min_samples
     min_samples = val
     show_element_extractor(eps, min_samples)
-    print(eps, min_samples)
 
 
 def show_element_extractor(eps, min_samples):
