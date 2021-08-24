@@ -6,7 +6,6 @@ import json
 if __name__ == "__main__":
     # Read shapes
     shapes_dict, shapes_paths = get_element_paths("shapes")
-    print(shapes_paths)
     # Read connections
     connections_dict, connections_paths = get_element_paths("connections")
     # Read texts
@@ -16,7 +15,7 @@ if __name__ == "__main__":
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
     ids_suffixes = {**shapes_dict, **connections_dict}
 
-    dg = DiagramGenerator("diagrams/", 10, (5, 15), seed=42, debug=True)
+    dg = DiagramGenerator("diagrams/", 1000, (5, 15), seed=42, debug=True)
     annotation_classes = dg.run(shapes_paths, connections_paths, None, ids_suffixes)
     classes_json_path = utils.check_file_path('annotated_classes.json')
     with open(classes_json_path, 'w') as f:

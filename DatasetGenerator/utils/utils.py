@@ -193,8 +193,14 @@ def get_pixels_coords(image):
     :param image: Binary images to extract coordinates from.
     :return: List of positions of non-zero pixels in (x, y) format.
     """
-    white_points = np.argwhere(image)
-    return [np.flip(c[:2]) for c in white_points]
+    try:
+        white_points = cv2.findNonZero(image)
+    except AttributeError:
+        raise AttributeError("Image can not be empty (no non-zero pixels)")
+    if white_points is None:
+        return []
+    else:
+        return white_points.reshape(white_points.shape[0], 2)
 
 
 def get_angle_two_points(p1, p2, out_format='decimal'):
