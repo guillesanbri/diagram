@@ -58,6 +58,11 @@ class DiagramGenerator:
         if sys.version_info[:2] < (3, 7):
             raise RuntimeError("The python interpreter version must be "
                                "at least 3.7")
+        # Check the minimum number of shapes to put in the diagrams
+        minimum = min(self.shape_n_range)
+        if minimum < 5:
+            raise ValueError("Minimum value of self.shape_n_range can not be"
+                             "less than 5.")
 
     # TODO: Test if the dictionary can be modified to group all shapes ->
     #   it can, but proper testing has to be done.
@@ -118,8 +123,6 @@ class DiagramGenerator:
         is less than 5 the shape can be bigger than the diagram, raising an
         error in the random integer method. However, if this default values
         change this method will break.
-        TODO: Link this method to the size formula in SyntheticDiagram.
-        TODO: Move this check to the initialization of DiagramGenerator.
 
         :return: Randomized number of shapes.
         :raises ValueError: If the minimum value of self.shape_n_range
@@ -128,9 +131,6 @@ class DiagramGenerator:
         """
         minimum = min(self.shape_n_range)
         maximum = max(self.shape_n_range)
-        if minimum < 5:
-            raise ValueError("Minimum value of self.shape_n_range can not be"
-                             "less than 5.")
         return self.rng.integers(minimum, maximum)
 
     def run(self, shapes_paths, connections_paths, texts_paths, classes):
