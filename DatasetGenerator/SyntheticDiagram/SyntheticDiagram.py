@@ -107,6 +107,21 @@ class SyntheticDiagram:
         ys0 = self.rng.integers(self.y0, self.y0 + self.rheight - shape_shape[0])
         return xs0, ys0
 
+    def randomize_flip(self, image):
+        """
+        Randomly flips an image. The outcomes can be no flip, horizontal flip,
+        vertical flip, or both at the same time.
+
+        :param image: Image that may be flipped.
+        :return: Modified or unmodified copy of the specified image.
+        """
+        options = [None, -1, 0, 1]
+        random_decision = self.rng.choice(options)
+        if random_decision is not None:
+            return cv2.flip(image.copy(), random_decision)
+        else:
+            return image.copy()
+
     def place_element(self, image, box):
         """
         Places the element defined by an image and a box into the output
@@ -208,6 +223,8 @@ class SyntheticDiagram:
         for shape_index in range(self.n_shapes):
             # Choose a random shape and read it.
             element_id, shape_img = self.load_random_from(self.shapes_paths)
+            # Randomly flip the image
+            shape_img = self.randomize_flip(shape_img)
             # Randomize its maximum shape and scale it.
             randomized_size = self.randomize_shape_size(self.max_shape_size)
             shape_img = utils.scale_image(shape_img, randomized_size)
@@ -234,6 +251,8 @@ class SyntheticDiagram:
                 p1, p2 = point_pair
                 # Load random connection
                 connection_id, connection_img = self.load_random_from(self.connections_paths)
+                # Randomly flip the image
+                connection_img = self.randomize_flip(connection_img)
                 # Transform the connection image to match a line between the
                 # two points and get its box.
                 connection_box, connection_img = utils.match_connection_img_to_points(connection_img,

@@ -2,7 +2,6 @@ from DatasetGenerator.utils.utils import get_element_paths
 import DatasetGenerator.utils.utils as utils
 from DatasetGenerator.DiagramGenerator import DiagramGenerator
 import json
-import os
 
 if __name__ == "__main__":
     # Read shapes
