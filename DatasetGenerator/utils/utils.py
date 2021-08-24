@@ -7,8 +7,6 @@ import cv2
 import os
 
 
-# TODO: Write tests for these functions
-# TODO: Test excluding and including certain shapes.
 def get_paths(path, element_ids):
     """
     Finds all diagram element files with and id in the element_ids list
@@ -124,7 +122,6 @@ def check_file_path(file):
     return new_file
 
 
-# TODO: Change Tests from TestSyntheticDiagram to TestUtils
 def overlaps(b1, b2):
     """
     Checks if two boxes given by their upper left and lower right corners

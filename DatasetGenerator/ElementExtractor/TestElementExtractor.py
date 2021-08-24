@@ -2,7 +2,6 @@ from DatasetGenerator.ElementExtractor import ElementExtractor
 import unittest
 
 
-# TODO: Fix tests
 class TestElementExtractor(unittest.TestCase):
 
     def test_init_relative_path(self):

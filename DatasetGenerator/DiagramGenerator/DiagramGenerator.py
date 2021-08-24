@@ -4,12 +4,10 @@ import DatasetGenerator.utils.utils as utils
 from tqdm import tqdm
 import numpy as np
 import warnings
-import json
 import sys
 import cv2
 
 
-# TODO: Tests of this class
 # TODO: Pad to square in the preprocessing function to new inputs.
 class DiagramGenerator:
     """
@@ -64,8 +62,6 @@ class DiagramGenerator:
             raise ValueError("Minimum value of self.shape_n_range can not be"
                              "less than 5.")
 
-    # TODO: Test if the dictionary can be modified to group all shapes ->
-    #   it can, but proper testing has to be done.
     def __translate_annotations(self, ids_suffixes):
         """
         Updates the self.annotations array to substitute each box id by

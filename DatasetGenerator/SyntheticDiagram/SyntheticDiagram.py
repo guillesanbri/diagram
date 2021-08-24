@@ -5,7 +5,6 @@ import hashlib
 import cv2
 
 
-# TODO: Test this class.
 class SyntheticDiagram:
     """
     Object representing one single synthetic diagram and its parameters.
