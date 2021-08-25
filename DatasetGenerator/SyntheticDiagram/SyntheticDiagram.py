@@ -265,11 +265,7 @@ class SyntheticDiagram:
         Generates the output image containing an artificial diagram composed
         by a set of the available elements.
 
-        :return: A tuple containing (Annotation for the generated image in
-         format box1 box2 box3..., Output image with the generated diagram).
-         Box annotation follow the schema min_x,min_y,max_x,max_y,element_id
-         where the element_id represents the id in the element_id.json, NOT
-         a detection class id.
+        :return: Output image with the generated diagram.
         """
         if self.debug:
             self.__draw_randomized_limits()
@@ -278,4 +274,15 @@ class SyntheticDiagram:
         self.add_connections()
         # self.add_texts()
 
-        return self.get_annotation(), self.output_img
+        return self.output_img
+
+    def get_boxes_annotations(self):
+        """
+        Gets the boxes annotations from a fully generated synthetic diagram.
+        Each box annotation follows the schema:
+        min_x,min_y,max_x,max_y,element_id
+
+        :return: Annotation for the generated image in format
+         box1 box2 box3...
+        """
+        return self.get_annotation()

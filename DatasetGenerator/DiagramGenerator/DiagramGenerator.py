@@ -49,14 +49,14 @@ class DiagramGenerator:
         self.debug = debug
         self.rng = np.random.default_rng(seed)
         # Annotations
-        self.annotations = []
+        self.detection_annotations = []
         # Check the minimum number of shapes to put in the diagrams
         minimum = min(self.shape_n_range)
         if minimum < 5:
             raise ValueError("Minimum value of self.shape_n_range can not be"
                              "less than 5.")
 
-    def translate_annotations(self, ids_suffixes):
+    def translate_detection_annotations(self, ids_suffixes):
         """
         Updates the self.annotations array to substitute each box id by
         its element (class) suffix. New boxes annotations will follow the
@@ -65,7 +65,7 @@ class DiagramGenerator:
         :param ids_suffixes: Dictionary of id as keys and the suffix as value.
         """
         translated_annotations = []
-        for annotation in self.annotations:
+        for annotation in self.detection_annotations:
             path = annotation.split(" ")[0]
             boxes = annotation.split(" ")[1:]
             boxes_elements = [box.split(",") for box in boxes]
@@ -75,9 +75,9 @@ class DiagramGenerator:
             translated = " ".join(translated_boxes)
             translated = f"{path} " + translated
             translated_annotations.append(translated)
-        self.annotations = translated_annotations
+        self.detection_annotations = translated_annotations
 
-    def save_annotations(self):
+    def save_detection_annotations(self):
         """
         Generates and saves an annotation file following the model:
 
@@ -90,11 +90,11 @@ class DiagramGenerator:
         x_min,y_min,x_max,y_max,class_suffix
 
         """
-        if self.annotations is None:
+        if self.detection_annotations is None:
             warnings.warn("No annotations have been previously generated!")
         self.annotation_file = utils.check_file_path(self.annotation_file)
         with open(self.annotation_file, 'w') as fw:
-            fw.write('\n'.join(self.annotations))
+            fw.write('\n'.join(self.detection_annotations))
 
     def get_random_n_shapes(self):
         """
@@ -144,10 +144,11 @@ class DiagramGenerator:
                                              self.output_shape,
                                              self.min_shape,
                                              n_shapes, seed=seed)
-            annotation, diagram = synth_diagram.generate()
+            diagram = synth_diagram.generate()
+            annotation = synth_diagram.get_boxes_annotations()
             output_path = self.output_path + synth_diagram.get_name()
             annotation = f"{output_path} " + annotation
-            self.annotations.append(annotation)
+            self.detection_annotations.append(annotation)
             cv2.imwrite(output_path, diagram)
-        self.translate_annotations(classes)
-        self.save_annotations()
+        self.translate_detection_annotations(classes)
+        self.save_detection_annotations()
