@@ -1,10 +1,8 @@
 from DatasetGenerator.SyntheticDiagram import SyntheticDiagram
-from DatasetGenerator.utils.utils import get_element_paths
 import DatasetGenerator.utils.utils as utils
 from tqdm import tqdm
 import numpy as np
 import warnings
-import sys
 import cv2
 
 
@@ -52,45 +50,34 @@ class DiagramGenerator:
         self.rng = np.random.default_rng(seed)
         # Annotations
         self.annotations = []
-        # This class relies on dict ordering and breaks in python < 3.7
-        if sys.version_info[:2] < (3, 7):
-            raise RuntimeError("The python interpreter version must be "
-                               "at least 3.7")
         # Check the minimum number of shapes to put in the diagrams
         minimum = min(self.shape_n_range)
         if minimum < 5:
             raise ValueError("Minimum value of self.shape_n_range can not be"
                              "less than 5.")
 
-    def __translate_annotations(self, ids_suffixes):
+    def translate_annotations(self, ids_suffixes):
         """
         Updates the self.annotations array to substitute each box id by
-        a class id starting from 0. New boxes annotations will follow the next
-        schema: min_x,min_y,max_x,max_y,class
+        its element (class) suffix. New boxes annotations will follow the
+        next schema: min_x,min_y,max_x,max_y,element_suffix
 
         :param ids_suffixes: Dictionary of id as keys and the suffix as value.
-        :return: A dictionary mapping each new id class to its corresponding
-         element suffix. ie: new_class_id:element_suffix
         """
         translated_annotations = []
-        # Create a dictionary of suffix:new_class_id
-        distinct_suffixes = set(ids_suffixes.values())
-        class_ids = [i for i in range(len(distinct_suffixes))]
-        class_dict = dict(zip(distinct_suffixes, class_ids))
         for annotation in self.annotations:
             path = annotation.split(" ")[0]
             boxes = annotation.split(" ")[1:]
             boxes_elements = [box.split(",") for box in boxes]
             for box in boxes_elements:
-                box[-1] = str(class_dict[ids_suffixes[box[-1]]])
+                box[-1] = str(ids_suffixes[box[-1]])
             translated_boxes = [",".join(be) for be in boxes_elements]
             translated = " ".join(translated_boxes)
             translated = f"{path} " + translated
             translated_annotations.append(translated)
         self.annotations = translated_annotations
-        return dict(zip(class_ids, class_dict.keys()))  # ids_suffixes.values()
 
-    def __save_annotations(self):
+    def save_annotations(self):
         """
         Generates and saves an annotation file following the model:
 
@@ -100,7 +87,7 @@ class DiagramGenerator:
 
         with each box defined as:
 
-        x_min,y_min,
+        x_min,y_min,x_max,y_max,class_suffix
 
         """
         if self.annotations is None:
@@ -144,13 +131,6 @@ class DiagramGenerator:
          during diagram generation.
         :param classes: Dictionary of id:element of every element to be placed
          in the generated diagrams.
-        :return: Dictionary of class_id:element_suffix where class_id indicates
-         each value annotated in the annotations file and element_suffix
-         indicates its correspondent element as passed through the classes
-         parameter of this method.
-         If the classes param is {'xxx':'a', 'yyy':'b'}, the returned dict
-         will be {0:'a', 1:'b'}. If the classes param is {'xxx':'c', 'yyy':'c'}
-         the returned dict will be {0:'c'}.
         """
         for _ in tqdm(range(self.quantity)):
             seed = None
@@ -169,6 +149,5 @@ class DiagramGenerator:
             annotation = f"{output_path} " + annotation
             self.annotations.append(annotation)
             cv2.imwrite(output_path, diagram)
-        annotated_classes = self.__translate_annotations(classes)
-        self.__save_annotations()
-        return annotated_classes
+        self.translate_annotations(classes)
+        self.save_annotations()

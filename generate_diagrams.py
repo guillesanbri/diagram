@@ -1,7 +1,5 @@
 from DatasetGenerator.utils.utils import get_element_paths
-import DatasetGenerator.utils.utils as utils
 from DatasetGenerator.DiagramGenerator import DiagramGenerator
-import json
 
 if __name__ == "__main__":
     # Read shapes
@@ -12,12 +10,11 @@ if __name__ == "__main__":
 
     # Dictionary of id:element_suffix
     # Element tagging can be overwritten as follows
+    # There is no point in doing this here, annotations will be transformed
+    # before training to ensure consistency between train/val/test
     # shapes_dict = {'400': 'shape', '600': 'shape', '800': 'shape'}
     ids_suffixes = {**shapes_dict, **connections_dict}
 
-    dg = DiagramGenerator("diagrams/", 1000, (5, 15), seed=42, debug=True)
-    annotation_classes = dg.run(shapes_paths, connections_paths, None, ids_suffixes)
-    classes_json_path = utils.check_file_path('annotated_classes.json')
-    with open(classes_json_path, 'w') as f:
-        json.dump(annotation_classes, f)
+    dg = DiagramGenerator("diagrams/", 10, (5, 15), seed=42, debug=True)
+    dg.run(shapes_paths, connections_paths, None, ids_suffixes)
     # dg.save_annotation_as(annotations, "VOC")  # Convert to typical bbox annotation formats.
