@@ -4,6 +4,7 @@ from tqdm import tqdm
 import numpy as np
 import warnings
 import cv2
+import os
 
 
 # TODO: Pad to square in the preprocessing function to new inputs.
@@ -50,6 +51,12 @@ class DiagramGenerator:
         self.rng = np.random.default_rng(seed)
         # Annotations
         self.detection_annotations = []
+
+        # Create the output dir if it does not exist
+        os.makedirs(self.output_path, exist_ok=True)
+        # Create the masks dir if it does not exist
+        os.makedirs(self.output_path + "masks", exist_ok=True)
+
         # Check the minimum number of shapes to put in the diagrams
         minimum = min(self.shape_n_range)
         if minimum < 5:
@@ -145,10 +152,18 @@ class DiagramGenerator:
                                              self.min_shape,
                                              n_shapes, seed=seed)
             diagram = synth_diagram.generate()
-            annotation = synth_diagram.get_boxes_annotations()
-            output_path = self.output_path + synth_diagram.get_name()
-            annotation = f"{output_path} " + annotation
-            self.detection_annotations.append(annotation)
+            boxes_annotation = synth_diagram.get_boxes_annotations()
+            instance_annotation = synth_diagram.get_instances_annotations()
+            diagram_filename = synth_diagram.get_name()
+            output_path = self.output_path + diagram_filename
+            boxes_annotation = f"{output_path} " + boxes_annotation
+            self.detection_annotations.append(boxes_annotation)
             cv2.imwrite(output_path, diagram)
+            diagram_hash = diagram_filename.split(".")[0]
+            diagram_mask_dir = f"{self.output_path}masks/{diagram_hash}/"
+            os.makedirs(diagram_mask_dir, exist_ok=True)
+            for element_class, element_mask in instance_annotation.items():
+                filepath = f"{diagram_mask_dir}{classes[element_class]}.png"
+                cv2.imwrite(filepath, element_mask)
         self.translate_detection_annotations(classes)
         self.save_detection_annotations()

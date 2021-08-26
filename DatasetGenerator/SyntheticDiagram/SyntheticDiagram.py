@@ -57,6 +57,8 @@ class SyntheticDiagram:
         self.placed_shapes = []  # [{"ulx", "uly", "lrx", "lry", "id"}, ...]
         self.max_shape_size = self.calculate_max_shape_size()
         self.shape_size_rng_range = shape_size_rng_range
+        self.instance_masks = {}
+        self.instance_masks_counter = {}
         # Mode
         self.debug = debug
 
@@ -124,7 +126,8 @@ class SyntheticDiagram:
     def place_element(self, image, box):
         """
         Places the element defined by an image and a box into the output
-        image and appends its position to self.placed_shapes.
+        image and appends its position to self.placed_shapes. This function
+        generates an instance mask every time an element is placed.
 
         :param image: OpenCV image (np.array) containing the element that
          is going to be placed.
@@ -142,6 +145,8 @@ class SyntheticDiagram:
         self.output_img[box["uly"]:box["lry"], box["ulx"]:box["lrx"]] |= image
         # Store the placed element
         self.placed_shapes.append(box)
+        # Generate the corresponding mask
+        self.generate_mask(image, box)
 
     def try_to_place_shape(self, shape_img, element_id):
         """
@@ -167,6 +172,37 @@ class SyntheticDiagram:
             if not overlapping:
                 self.place_element(shape_img, new_shape_position)
                 break
+
+    def generate_mask(self, element_image, box):
+        """
+        Generates an image with the mask of the element defined by the passed
+        parameters or updates an existing one to give the pixels corresponding
+        to another instance of the same class. This image is allocated in the
+        self.instance_masks dictionary with key = element_id. Pixel values in
+        the masks range from 0 (background) to num_instances in each class.
+
+        :param element_image: Image of the element that is going to be labelled
+         in the mask.
+        :param box: Box defining the position and element_id of the
+         element_image.
+        """
+        if box["id"] in self.instance_masks:
+            # If the element already has a mask where instances are being drawn
+            class_mask = self.instance_masks[box["id"]].copy()
+            pixel_value = self.instance_masks_counter[box["id"]] + 1
+            if pixel_value >= 255:
+                raise ValueError("Too many instances of the same class.")
+        else:
+            # If the element does not yet have a mask
+            class_mask = np.zeros(self.output_shape, dtype=np.uint8)
+            pixel_value = 1
+        y0, y1, x0, x1 = box["uly"], box["lry"], box["ulx"], box["lrx"]
+        # Assign a different value to each instance and deal with overlapping
+        class_mask[y0:y1, x0:x1] |= (element_image // 255 * pixel_value)
+        class_mask[class_mask >= pixel_value] = pixel_value
+        # Update the new mask and the new class instance counter
+        self.instance_masks[box["id"]] = class_mask
+        self.instance_masks_counter[box["id"]] = pixel_value
 
     def __draw_randomized_limits(self):
         """
@@ -286,3 +322,14 @@ class SyntheticDiagram:
          box1 box2 box3...
         """
         return self.get_annotation()
+
+    def get_instances_annotations(self):
+        """
+        Gets a dictionary of arrays where each key correspond to an element_id
+        where each value is an image whose pixels denote different instances
+        of said element. Each instance is labeled with a unique pixel value
+        from 1 to number_instances (zero is background).
+
+        :return: Dictionary of element_ids and instance label images.
+        """
+        return self.instance_masks
