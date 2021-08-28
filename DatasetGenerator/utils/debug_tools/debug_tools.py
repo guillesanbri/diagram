@@ -20,4 +20,4 @@ def visualize_element(image, coordinates):
 
 
 def draw_bbox(image, bbox):
-    return cv2.rectangle(image, (bbox[1], bbox[0]), (bbox[3], bbox[2]), (0, 220, 255), 2)
+    return cv2.rectangle(image, (bbox[1], bbox[0]), (bbox[3], bbox[2]), (255, 0, 0), 5)
