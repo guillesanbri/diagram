@@ -39,9 +39,10 @@ class ElementExtractor:
         if self.image is None:
             raise FileNotFoundError("Image could not be loaded.")
         self.image_grayscale = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        self.binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
+        binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 6)
+        self.binarized = cv2.medianBlur(binarized.copy(), 3)  # TODO: Copy to preprocessing
         self.cluster_vis = None
         self.bounding_boxes = None
         self.image_area = self.image.shape[0] * self.image.shape[1]
