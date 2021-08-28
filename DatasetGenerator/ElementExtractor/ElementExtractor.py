@@ -47,6 +47,27 @@ class ElementExtractor:
         self.bounding_boxes = None
         self.image_area = self.image.shape[0] * self.image.shape[1]
         self.elements = None
+        self.discard_points = []
+
+    # TODO: Docs
+    def add_discard_point(self, point):
+        # point is x,y
+        self.discard_points.append(point)
+
+    def check_elements(self, elements):
+        checked_elements = []
+        # y0, x0, y1, x1
+        for element in elements:
+            discarded = False
+            for point in self.discard_points:
+                check_x = element[1] <= point[0] <= element[3]
+                check_y = element[0] <= point[1] <= element[2]
+                if check_x and check_y:
+                    discarded = True
+            if not discarded:
+                checked_elements.append(element)
+        return checked_elements
+
 
     @staticmethod
     def coordinates_to_bbox(coordinates):
@@ -106,7 +127,7 @@ class ElementExtractor:
             bbox = ElementExtractor.coordinates_to_bbox(labels_coords)
             if self.get_bbox_area(bbox) / self.image_area * 1000 >= 1:
                 elements.append(bbox)
-        self.elements = elements
+        self.elements = self.check_elements(elements)
         debug_bboxes = self.image.copy()
         for bbox in self.elements:
             debug_bboxes = draw_bbox(debug_bboxes, bbox)
