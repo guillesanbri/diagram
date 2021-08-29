@@ -1,0 +1,1 @@
+from DatasetGenerator.SyntheticDiagram.SyntheticDiagram import SyntheticDiagram

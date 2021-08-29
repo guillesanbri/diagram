@@ -1,5 +1,5 @@
+from DatasetGenerator.ElementExtractor import ElementExtractor
 import unittest
-from ElementExtractor import ElementExtractor
 
 
 class TestElementExtractor(unittest.TestCase):

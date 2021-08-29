@@ -1,16 +1,7 @@
-import cv2
-import numpy as np
-from PIL import Image
+from DatasetGenerator.utils.debug_tools.debug_tools import visualize_clusters, draw_bbox
 from sklearn.cluster import DBSCAN
-from debug_tools import visualize_clusters, draw_bbox
-
-"""
-TODO:
-- Learn about DBSCAN and OPTICS parameters.
-- Change DBSCAN parameters to be a function of the image size.
-- Write tests for save_elements and extract.
-- Test dataset fabrication directly in binary format.
-"""
+import numpy as np
+import cv2
 
 
 class ElementExtractor:
@@ -26,7 +17,7 @@ class ElementExtractor:
     ee.save_elements("output/")
     """
 
-    def __init__(self, image_path):
+    def __init__(self, image_path, image):
         """
         Initializes an instance of ElementExtractor.
 
@@ -44,14 +35,51 @@ class ElementExtractor:
         self.device_id = info[2]
         self.element_id = info[3]
         self.tool_id = info[4]
-        self.image = cv2.imread(image_path)
+        self.image = image  # cv2.imread(image_path)
         if self.image is None:
             raise FileNotFoundError("Image could not be loaded.")
         self.image_grayscale = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        self.binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
+        binarized = cv2.adaptiveThreshold(self.image_grayscale, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 6)
+        self.binarized = cv2.medianBlur(binarized.copy(), 3)  # TODO: Copy to preprocessing
+        self.cluster_vis = None
+        self.bounding_boxes = None
+        self.image_area = self.image.shape[0] * self.image.shape[1]
         self.elements = None
+        self.discard_points = []
+
+    def add_discard_point(self, point):
+        """
+        Adds a point to the list of discarded points in the ElementExtractor.
+        If a point is discarded, every element that contains it is also
+        discarded.
+
+        :param point: Point (x, y) to be added to the discarded points list.
+        """
+        self.discard_points.append(point)
+
+    def check_elements(self, elements):
+        """
+        Checks if a list of elements conflicts with any of the discarded points
+        of the ElementExtractor and returns a curated list without the
+        conflicting points.
+
+        :param elements: Array of elements defined by y0, x0, y1, x1 where p0
+         is the upper left corner and p1 the lower right one.
+        :return: Filtered list of non-conflicting elements.
+        """
+        checked_elements = []
+        for element in elements:
+            discarded = False
+            for point in self.discard_points:
+                check_x = element[1] <= point[0] <= element[3]
+                check_y = element[0] <= point[1] <= element[2]
+                if check_x and check_y:
+                    discarded = True
+            if not discarded:
+                checked_elements.append(element)
+        return checked_elements
 
     @staticmethod
     def coordinates_to_bbox(coordinates):
@@ -68,11 +96,25 @@ class ElementExtractor:
         x1 = np.max(coordinates.T[1])
         return [y0, x0, y1, x1]
 
-    def extract(self, debug_clustering=False, debug_segmentation=False):
+    @staticmethod
+    def get_bbox_area(bbox):
+        """
+        Calculates the area of a given bounding box.
+
+        :param bbox: An array [y0, x0, y1, x1] where p0 is the upper left
+         corner and p1 the lower right one.
+        :return: Area of the specified bounding box.
+        """
+        return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+
+    def extract(self, eps=20, min_samples=20, debug_clustering=False,
+                debug_segmentation=False):
         """
         Populates the self.elements attribute with an array of the coordinates
         of every element in the image.
 
+        :param eps: Eps parameter of the clustering algorithm.
+        :param min_samples: Min_samples parameter of the clustering algorithm.
         :param debug_clustering: If True, shows an opencv GUI with an image with
          each cluster colorized of a single color.
         :param debug_segmentation: If True, shows an opencv GUI with an image where
@@ -82,10 +124,10 @@ class ElementExtractor:
         # Coords are retrieved as follows: [[y0, x0], [y1, x1], ...] (using opencv image coords)
         coordinates = np.argwhere(self.binarized)
         # Clustering is done via DBSCAN, OPTICS may be a (memory) cheaper choice
-        clustering = DBSCAN(eps=20, min_samples=20).fit(coordinates)
+        clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(coordinates)
+        self.cluster_vis = visualize_clusters(self.image.copy(), coordinates, clustering.labels_)
         if debug_clustering:
-            cluster_vis = visualize_clusters(self.image.copy(), coordinates, clustering.labels_)
-            cv2.imshow("clusters", cluster_vis)
+            cv2.imshow("clusters", self.cluster_vis)
             cv2.waitKey(0)
         # DBSCAN tags outliers as -1, so those values are not considered.
         elements = []
@@ -95,12 +137,14 @@ class ElementExtractor:
             # Store bounding box for each label defined by y0, x0, y1, x1
             # being p0 the upper left corner and p1 the lower right one.
             bbox = ElementExtractor.coordinates_to_bbox(labels_coords)
-            elements.append(bbox)
-        self.elements = elements
+            if self.get_bbox_area(bbox) / self.image_area * 1000 >= 1:
+                elements.append(bbox)
+        self.elements = self.check_elements(elements)
+        debug_bboxes = self.image.copy()
+        for bbox in self.elements:
+            debug_bboxes = draw_bbox(debug_bboxes, bbox)
+        self.bounding_boxes = debug_bboxes
         if debug_segmentation:
-            debug_bboxes = self.image.copy()
-            for bbox in self.elements:
-                debug_bboxes = draw_bbox(debug_bboxes, bbox)
             cv2.imshow("Bounding boxes", debug_bboxes)
             cv2.waitKey(0)
 
@@ -126,6 +170,6 @@ class ElementExtractor:
 
 
 if __name__ == "__main__":
-    ee = ElementExtractor("easy1-aaa-bbb-ccc-ddd.jpeg")
+    ee = ElementExtractor("pictures/00000-000-000-a00-002.jpg")
     ee.extract(debug_clustering=True, debug_segmentation=True)
     ee.save_elements("elements/")
