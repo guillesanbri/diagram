@@ -3,8 +3,7 @@ import os
 from DatasetGenerator.ElementExtractor import ElementExtractor
 import cv2
 
-# TODO: Change this to instructions on terminal
-window = "Press space to confirm - Press d to discard - Press q to abort"
+window = "Usage instructions are available in the terminal"
 image = None
 element_extractor = None
 eps = 20
@@ -23,9 +22,7 @@ def on_trackbar_samples(val):
     show_element_extractor(eps, min_samples)
 
 
-# TODO: If you click on a element you remove it
 def discard_element(event, x, y, flags, param):
-    global mouseX, mouseY
     if event == cv2.EVENT_LBUTTONDOWN:
         element_extractor.add_discard_point((x, y))
         show_element_extractor(eps, min_samples)
@@ -37,7 +34,21 @@ def show_element_extractor(eps, min_samples):
     cv2.imshow(window, clustering_image)
 
 
+def print_instructions():
+    print("="*80)
+    print("Instructions")
+    print("-"*12)
+    print("Keyboard:")
+    print("\t- Press space to confirm the extraction of elements as shown")
+    print("\t- Press d to discard a single picture and process the next")
+    print("\t- Press q to abort and exit the program")
+    print("Mouse:")
+    print("\t- Left click on any box in the image to discard said element")
+    print("="*80)
+
+
 if __name__ == "__main__":
+    print_instructions()
     # Get list of the paths of the pictures with elements to extract
     pictures_dir = "pictures/"
     already_processed_dir = "pictures/already_extracted/"
