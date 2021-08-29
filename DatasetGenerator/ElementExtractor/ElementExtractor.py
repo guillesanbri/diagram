@@ -49,14 +49,27 @@ class ElementExtractor:
         self.elements = None
         self.discard_points = []
 
-    # TODO: Docs
     def add_discard_point(self, point):
-        # point is x,y
+        """
+        Adds a point to the list of discarded points in the ElementExtractor.
+        If a point is discarded, every element that contains it is also
+        discarded.
+
+        :param point: Point (x, y) to be added to the discarded points list.
+        """
         self.discard_points.append(point)
 
     def check_elements(self, elements):
+        """
+        Checks if a list of elements conflicts with any of the discarded points
+        of the ElementExtractor and returns a curated list without the
+        conflicting points.
+
+        :param elements: Array of elements defined by y0, x0, y1, x1 where p0
+         is the upper left corner and p1 the lower right one.
+        :return: Filtered list of non-conflicting elements.
+        """
         checked_elements = []
-        # y0, x0, y1, x1
         for element in elements:
             discarded = False
             for point in self.discard_points:
@@ -67,7 +80,6 @@ class ElementExtractor:
             if not discarded:
                 checked_elements.append(element)
         return checked_elements
-
 
     @staticmethod
     def coordinates_to_bbox(coordinates):
